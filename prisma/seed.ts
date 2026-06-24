@@ -1,0 +1,458 @@
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  // Clear existing data
+  await prisma.message.deleteMany({});
+  await prisma.ticket.deleteMany({});
+  await prisma.student.deleteMany({});
+  await prisma.resource.deleteMany({});
+  await prisma.campaign.deleteMany({});
+  await prisma.activityFeed.deleteMany({});
+
+  console.log('Seeding students...');
+  const students = [
+    {
+      name: 'Acha Brandon Neba',
+      matricule: 'EP2026-1234',
+      instEmail: 'acha.brandon@university.edu',
+      personalEmail: 'achabrandon10@gmail.com',
+      phone: '+237 677 89 45 12',
+      faculty: 'Faculty of Engineering and Technology',
+      dept: 'Computer Engineering',
+      level: 300,
+      tuitionStatus: 'Paid',
+      medicalStatus: 'Cleared',
+    },
+    {
+      name: 'Njeck Carine Kah',
+      matricule: 'EP2026-0045',
+      instEmail: 'njeck.carine@university.edu',
+      personalEmail: 'njeckcarine99@yahoo.com',
+      phone: '+237 655 43 21 09',
+      faculty: 'Faculty of Health Sciences',
+      dept: 'Nursing',
+      level: 400,
+      tuitionStatus: 'Overdue',
+      medicalStatus: 'Pending',
+    },
+    {
+      name: 'Enow Boris Besong',
+      matricule: 'EP2026-0911',
+      instEmail: 'enow.boris@university.edu',
+      personalEmail: 'enowboris203@gmail.com',
+      phone: '+237 681 12 34 56',
+      faculty: 'Faculty of Science',
+      dept: 'Computer Science',
+      level: 400,
+      tuitionStatus: 'Paid',
+      medicalStatus: 'Cleared',
+    },
+    {
+      name: 'Mbah Vanessa Anwei',
+      matricule: 'EP2026-1498',
+      instEmail: 'mbah.vanessa@university.edu',
+      personalEmail: 'mbahvanessa@gmail.com',
+      phone: '+237 679 09 87 65',
+      faculty: 'Faculty of Humanities and Social Sciences',
+      dept: 'Journalism and Communication',
+      level: 200,
+      tuitionStatus: 'Overdue',
+      medicalStatus: 'Cleared',
+    },
+    {
+      name: 'Fotso Cedric Kamdem',
+      matricule: 'EP2026-0832',
+      instEmail: 'fotso.cedric@university.edu',
+      personalEmail: 'fotsocedric@gmail.com',
+      phone: '+237 699 88 77 66',
+      faculty: 'Faculty of Engineering and Technology',
+      dept: 'Electrical Engineering',
+      level: 300,
+      tuitionStatus: 'Paid',
+      medicalStatus: 'Pending',
+    },
+    {
+      name: 'Niba Dillion Tabi',
+      matricule: 'EP2026-0112',
+      instEmail: 'niba.dillion@university.edu',
+      personalEmail: 'nibadillion@gmail.com',
+      phone: '+237 673 45 67 89',
+      faculty: 'School of Languages and Translation',
+      dept: 'Translation Studies',
+      level: 100,
+      tuitionStatus: 'Paid',
+      medicalStatus: 'Cleared',
+    },
+    {
+      name: 'Agbortoko Christabel',
+      matricule: 'EP2026-0490',
+      instEmail: 'agbortoko.christabel@university.edu',
+      personalEmail: 'christabelagbor@gmail.com',
+      phone: '+237 651 23 45 67',
+      faculty: 'Faculty of Science',
+      dept: 'Biochemistry',
+      level: 200,
+      tuitionStatus: 'Overdue',
+      medicalStatus: 'Pending',
+    },
+    {
+      name: 'Atangana Marie Therese',
+      matricule: 'EP2026-1567',
+      instEmail: 'atangana.marie@university.edu',
+      personalEmail: 'marietherese@yahoo.fr',
+      phone: '+237 691 90 89 78',
+      faculty: 'Faculty of Humanities and Social Sciences',
+      dept: 'Economics',
+      level: 400,
+      tuitionStatus: 'Paid',
+      medicalStatus: 'Cleared',
+    },
+    {
+      name: 'Tanyi Samuel Ojong',
+      matricule: 'EP2026-1902',
+      instEmail: 'tanyi.samuel@university.edu',
+      personalEmail: 'tanyisammy@gmail.com',
+      phone: '+237 675 66 55 44',
+      faculty: 'Faculty of Health Sciences',
+      dept: 'Medicine',
+      level: 300,
+      tuitionStatus: 'Overdue',
+      medicalStatus: 'Cleared',
+    },
+    {
+      name: 'Epie Ndille Fritz',
+      matricule: 'EP2026-0743',
+      instEmail: 'epie.ndille@university.edu',
+      personalEmail: 'fritzndille@gmail.com',
+      phone: '+237 682 99 00 11',
+      faculty: 'Faculty of Engineering and Technology',
+      dept: 'Computer Engineering',
+      level: 100,
+      tuitionStatus: 'Paid',
+      medicalStatus: 'Pending',
+    },
+  ];
+
+  for (const s of students) {
+    await prisma.student.create({ data: s });
+  }
+
+  console.log('Seeding resources...');
+  const resources = [
+    {
+      id: 'r1',
+      title: 'EEG311: Embedded Systems Lecture Notes',
+      description: 'Complete lecture slides covering microcontrollers, assembly code, and input/output interfaces.',
+      type: 'notes',
+      url: '/mock-documents/embedded-systems-notes.pdf',
+      faculty: 'Faculty of Engineering and Technology',
+      dept: 'Electrical Engineering',
+      level: 300,
+    },
+    {
+      id: 'r2',
+      title: 'CEG415: Software Engineering Past Paper (2023)',
+      description: 'Past examination paper for software design patterns, architectural designs, and agile methodology.',
+      type: 'pastpaper',
+      url: '/mock-documents/software-eng-past-paper.pdf',
+      faculty: 'Faculty of Engineering and Technology',
+      dept: 'Computer Engineering',
+      level: 400,
+    },
+    {
+      id: 'r3',
+      title: 'Introduction to Biochemistry Lecture 1',
+      description: 'A comprehensive video playlist explaining molecular structures and biochemical processes.',
+      type: 'youtube',
+      url: 'https://www.youtube.com/embed/s8rsR_TStaA',
+      faculty: 'Faculty of Science',
+      dept: 'Biochemistry',
+      level: 200,
+    },
+    {
+      id: 'r4',
+      title: 'CSC401: Distributed Systems Past Paper (2022)',
+      description: 'Exam questions on RPCs, consensus algorithms, client-server models, and MapReduce.',
+      type: 'pastpaper',
+      url: '/mock-documents/distributed-systems-past-paper.pdf',
+      faculty: 'Faculty of Science',
+      dept: 'Computer Science',
+      level: 400,
+    },
+    {
+      id: 'r5',
+      title: 'Principles of Economics - Lecture Notes',
+      description: 'Introductory notes on macroeconomics, supply and demand curve analytics, and market structures.',
+      type: 'notes',
+      url: '/mock-documents/principles-of-economics-notes.pdf',
+      faculty: 'Faculty of Humanities and Social Sciences',
+      dept: 'Economics',
+      level: 200,
+    },
+    {
+      id: 'r6',
+      title: 'Journalism ethics and media law',
+      description: 'A panel discussion video from Cameroon Radio Television on local press policies and guidelines.',
+      type: 'youtube',
+      url: 'https://www.youtube.com/embed/s8rsR_TStaA',
+      faculty: 'Faculty of Humanities and Social Sciences',
+      dept: 'Journalism and Communication',
+      level: 200,
+    },
+    {
+      id: 'r7',
+      title: 'NUR405: Critical Care Nursing Notes',
+      description: 'Study guide covering emergency response algorithms, ICU nursing protocols, and patient monitoring.',
+      type: 'notes',
+      url: '/mock-documents/critical-care-nursing-notes.pdf',
+      faculty: 'Faculty of Health Sciences',
+      dept: 'Nursing',
+      level: 400,
+    },
+    {
+      id: 'r8',
+      title: 'CEG312: Database Management Systems Tutorial',
+      description: 'Step-by-step SQL tutorials covering relational design, normalization theory, and transaction processing.',
+      type: 'youtube',
+      url: 'https://www.youtube.com/embed/s8rsR_TStaA',
+      faculty: 'Faculty of Engineering and Technology',
+      dept: 'Computer Engineering',
+      level: 300,
+    },
+    {
+      id: 'r9',
+      title: 'Introduction to Translation Theory and Practice',
+      description: 'A study pack summarizing the core translation strategies (equivalence, modulation, transposition).',
+      type: 'notes',
+      url: '/mock-documents/translation-theory-practice.pdf',
+      faculty: 'School of Languages and Translation',
+      dept: 'Translation Studies',
+      level: 100,
+    },
+    {
+      id: 'r10',
+      title: 'MED302: Pediatric Care Case Studies',
+      description: 'Past clinical case reviews, patient assessments, and diagnostic methodologies.',
+      type: 'pastpaper',
+      url: '/mock-documents/pediatric-care-case-studies.pdf',
+      faculty: 'Faculty of Health Sciences',
+      dept: 'Medicine',
+      level: 300,
+    },
+  ];
+
+  for (const r of resources) {
+    await prisma.resource.create({ data: r });
+  }
+
+  console.log('Seeding support tickets and messages...');
+  const tickets = [
+    {
+      id: 't-101',
+      studentMatricule: 'EP2026-1234',
+      subject: 'Tuition Fee Payment Update Delay',
+      description: 'I paid my balance of 25,000 CFA Francs through Mobile Money yesterday, but my student dashboard still marks my status as Overdue.',
+      status: 'open',
+      date: '2026-06-23',
+      messages: [
+        {
+          sender: 'student',
+          text: 'I paid my balance of 25,005 CFA Francs through Mobile Money yesterday, but my student dashboard still marks my status as Overdue.',
+          date: '2026-06-23 09:30',
+        },
+      ],
+    },
+    {
+      id: 't-102',
+      studentMatricule: 'EP2026-0045',
+      subject: 'Medical Clearance Pending Status',
+      description: 'I completed my medical screening at the University Health Center last week but it is still showing pending on the dashboard. I need this to register for exams.',
+      status: 'open',
+      date: '2026-06-22',
+      messages: [
+        {
+          sender: 'student',
+          text: 'I completed my medical screening at the University Health Center last week but it is still showing pending on the dashboard. I need this to register for exams.',
+          date: '2026-06-22 14:15',
+        },
+      ],
+    },
+    {
+      id: 't-103',
+      studentMatricule: 'EP2026-0911',
+      subject: 'Request for Institutional Email Reset',
+      description: 'I cannot log into my Office 365 student account. It keeps saying that my institutional email is blocked.',
+      status: 'closed',
+      date: '2026-06-20',
+      messages: [
+        {
+          sender: 'student',
+          text: 'I cannot log into my Office 365 student account. It keeps saying that my institutional email is blocked.',
+          date: '2026-06-20 10:00',
+        },
+        {
+          sender: 'admin',
+          text: 'Hello Boris. Your institutional account has been reset. Please use the temporary password Temp@2026 to log in and change your password immediately.',
+          date: '2026-06-21 08:45',
+        },
+        {
+          sender: 'student',
+          text: 'Thank you! It works fine now.',
+          date: '2026-06-21 11:30',
+        },
+      ],
+    },
+    {
+      id: 't-104',
+      studentMatricule: 'EP2026-1234',
+      subject: 'Clash in Exam Timetable (EEG311 & CEG312)',
+      description: 'Both the Embedded Systems exam and the Database systems exam are scheduled for Monday, June 29th at 8:00 AM.',
+      status: 'open',
+      date: '2026-06-24',
+      messages: [
+        {
+          sender: 'student',
+          text: 'Both the Embedded Systems exam and the Database systems exam are scheduled for Monday, June 29th at 8:00 AM.',
+          date: '2026-06-24 07:12',
+        },
+      ],
+    },
+    {
+      id: 't-105',
+      studentMatricule: 'EP2026-1498',
+      subject: 'Course Registration Portal Issue',
+      description: 'I am unable to select COM204 on my online course registration list. It says pre-requisite COM102 is missing, but I passed it last semester.',
+      status: 'open',
+      date: '2026-06-24',
+      messages: [
+        {
+          sender: 'student',
+          text: 'I am unable to select COM204 on my online course registration list. It says pre-requisite COM102 is missing, but I passed it last semester.',
+          date: '2026-06-24 11:05',
+        },
+      ],
+    },
+  ];
+
+  for (const t of tickets) {
+    const { messages, ...ticketData } = t;
+    const createdTicket = await prisma.ticket.create({ data: ticketData });
+    for (const msg of messages) {
+      await prisma.message.create({
+        data: {
+          ...msg,
+          ticketId: createdTicket.id,
+        },
+      });
+    }
+  }
+
+  console.log('Seeding campaigns...');
+  const campaigns = [
+    {
+      id: 'c-01',
+      title: 'Tuition Deadline Announcement',
+      audience: 'All Students',
+      message: 'Dear Students, please make sure to pay your second installment of tuition before June 30th to avoid registration blocks.',
+      sentDate: '2026-06-15',
+      status: 'Sent',
+    },
+    {
+      id: 'c-02',
+      title: 'Level 400 Graduation Requirements Check',
+      audience: 'Level 400',
+      message: 'All final year students must audit their academic transcripts with the department head before the semester ends.',
+      sentDate: '2026-06-18',
+      status: 'Sent',
+    },
+    {
+      id: 'c-03',
+      title: 'University Health Campaign Screening',
+      audience: 'Level 100',
+      message: 'Attention freshmen: Medical clearance physicals must be completed by next Friday at the main campus clinic.',
+      sentDate: '2026-06-20',
+      status: 'Sent',
+    },
+    {
+      id: 'c-04',
+      title: 'Practical Internship Reports Submission',
+      audience: 'Level 300',
+      message: 'All junior students are requested to upload their preliminary industrial internship reports by June 28th.',
+      sentDate: '2026-06-22',
+      status: 'Sent',
+    },
+    {
+      id: 'c-05',
+      title: 'Academic Seminar Invitation',
+      audience: 'All Students',
+      message: 'We invite you to the annual Sciences seminar this Friday at Amphi 750 starting from 2:00 PM.',
+      sentDate: '2026-06-24',
+      status: 'Draft',
+    },
+  ];
+
+  for (const c of campaigns) {
+    await prisma.campaign.create({ data: c });
+  }
+
+  console.log('Seeding activity feeds...');
+  const activities = [
+    {
+      action: 'opened a ticket regarding Tuition Fee delay',
+      user: 'Acha Brandon Neba',
+      time: '2 hours ago',
+    },
+    {
+      action: 'submitted physical medical clearance files',
+      user: 'Njeck Carine Kah',
+      time: '4 hours ago',
+    },
+    {
+      action: 'completed full tuition payment',
+      user: 'Fotso Cedric Kamdem',
+      time: '1 day ago',
+    },
+    {
+      action: 'registered for Level 100 translation courses',
+      user: 'Niba Dillion Tabi',
+      time: '2 days ago',
+    },
+    {
+      action: 'opened a ticket for Exam Timetable clash',
+      user: 'Acha Brandon Neba',
+      time: '5 mins ago',
+    },
+    {
+      action: 'updated course list verification',
+      user: 'Mbah Vanessa Anwei',
+      time: '12 mins ago',
+    },
+    {
+      action: 'resolved ticket regarding Office 365 password reset',
+      user: 'System Admin',
+      time: '3 days ago',
+    },
+    {
+      action: 'drafted an academic seminar newsletter',
+      user: 'Dean of Sciences',
+      time: '3 hours ago',
+    },
+  ];
+
+  for (const act of activities) {
+    await prisma.activityFeed.create({ data: act });
+  }
+
+  console.log('Database seeded successfully!');
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

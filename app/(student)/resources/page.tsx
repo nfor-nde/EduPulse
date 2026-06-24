@@ -1,7 +1,6 @@
-'use strict';
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   SearchIcon,
   FilterIcon,
@@ -11,51 +10,75 @@ import {
   ZoomInIcon,
   ZoomOutIcon
 } from '@/components/icons';
-import { useApp } from '@/context/AppContext';
 import { Resource } from '@/types';
 
 export default function StudentResourcesPage() {
-  const { resources } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFaculty, setSelectedFaculty] = useState('');
   const [selectedDept, setSelectedDept] = useState('');
   const [selectedLevel, setSelectedLevel] = useState('');
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [allResources, setAllResources] = useState<Resource[]>([]);
   const [filteredResources, setFilteredResources] = useState<Resource[]>([]);
 
   // Resource Viewer state
   const [viewingResource, setViewingResource] = useState<Resource | null>(null);
   const [pdfZoom, setPdfZoom] = useState(100);
 
-  // Get unique lists for filters
-  const faculties = Array.from(new Set(resources.map((r) => r.faculty)));
+  // Derive unique filter options from all resources
+  const faculties = Array.from(new Set(allResources.map((r) => r.faculty)));
   const departments = Array.from(
     new Set(
-      resources
+      allResources
         .filter((r) => !selectedFaculty || r.faculty === selectedFaculty)
         .map((r) => r.dept)
     )
   );
 
+  // Fetch all resources once on mount
   useEffect(() => {
-    setIsSyncing(true);
+    const fetchResources = async () => {
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/resources');
+        if (!res.ok) throw new Error('Failed to fetch resources');
+        const data: Resource[] = await res.json();
+        setAllResources(data);
+        setFilteredResources(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchResources();
+  }, []);
+
+  // Client-side filtering
+  const applyFilters = useCallback(() => {
+    setIsLoading(true);
     const timer = setTimeout(() => {
-      const results = resources.filter((resource) => {
+      const results = allResources.filter((resource) => {
         const matchesSearch =
+          !searchTerm ||
           resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           resource.description.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesFaculty = !selectedFaculty || resource.faculty === selectedFaculty;
         const matchesDept = !selectedDept || resource.dept === selectedDept;
         const matchesLevel = !selectedLevel || resource.level.toString() === selectedLevel;
-
         return matchesSearch && matchesFaculty && matchesDept && matchesLevel;
       });
       setFilteredResources(results);
-      setIsSyncing(false);
-    }, 400);
+      setIsLoading(false);
+    }, 350);
 
     return () => clearTimeout(timer);
-  }, [searchTerm, selectedFaculty, selectedDept, selectedLevel, resources]);
+  }, [searchTerm, selectedFaculty, selectedDept, selectedLevel, allResources]);
+
+  useEffect(() => {
+    const cleanup = applyFilters();
+    return cleanup;
+  }, [applyFilters]);
 
   const resetFilters = () => {
     setSearchTerm('');
@@ -93,10 +116,9 @@ export default function StudentResourcesPage() {
     }
   };
 
-  // Mock content generation for PDFs to make the direct document viewing experience feel full-fledged!
   const getMockPdfContent = (resource: Resource) => {
     return (
-      <div 
+      <div
         className="space-y-6 text-slate-900 leading-relaxed max-w-2xl mx-auto p-4 transition-all duration-300 select-text"
         style={{ fontSize: `${(pdfZoom / 100) * 14}px` }}
       >
@@ -137,7 +159,7 @@ export default function StudentResourcesPage() {
   };
 
   return (
-    <div className="space-y-8 font-sans bg-white text-slate-905">
+    <div className="space-y-8 font-sans bg-white text-slate-900">
       {/* Title Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
@@ -152,7 +174,7 @@ export default function StudentResourcesPage() {
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
         {/* Search Input */}
         <div className="relative">
-          <SearchIcon className="absolute left-4 top-3.5 text-slate-550 w-4 h-4" />
+          <SearchIcon className="absolute left-4 top-3.5 text-slate-500 w-4 h-4" />
           <input
             type="text"
             placeholder="Search resources by title, course code or description..."
@@ -177,9 +199,7 @@ export default function StudentResourcesPage() {
             >
               <option value="">All Faculties</option>
               {faculties.map((fac, i) => (
-                <option key={i} value={fac}>
-                  {fac}
-                </option>
+                <option key={i} value={fac}>{fac}</option>
               ))}
             </select>
           </div>
@@ -194,9 +214,7 @@ export default function StudentResourcesPage() {
             >
               <option value="">All Departments</option>
               {departments.map((dept, i) => (
-                <option key={i} value={dept}>
-                  {dept}
-                </option>
+                <option key={i} value={dept}>{dept}</option>
               ))}
             </select>
           </div>
@@ -231,7 +249,7 @@ export default function StudentResourcesPage() {
       </div>
 
       {/* Resource Grid / Skeletons */}
-      {isSyncing ? (
+      {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <div
@@ -301,7 +319,7 @@ export default function StudentResourcesPage() {
           </div>
           <h3 className="text-sm font-bold text-slate-900">No resources found</h3>
           <p className="text-xs text-slate-700">
-            We couldn't find any resources matching your search queries. Try adjusting your filter parameters.
+            We couldn&apos;t find any resources matching your search queries. Try adjusting your filter parameters.
           </p>
           <button
             onClick={resetFilters}
@@ -315,7 +333,7 @@ export default function StudentResourcesPage() {
       {/* Embedded Document / Video Viewer Modal */}
       {viewingResource && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-250 rounded-3xl w-full max-w-4xl shadow-2xl flex flex-col h-[85vh] relative animate-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-4xl shadow-2xl flex flex-col h-[85vh] relative animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center space-x-2">

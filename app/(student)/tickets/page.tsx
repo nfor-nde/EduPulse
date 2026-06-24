@@ -1,7 +1,6 @@
-'use strict';
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import {
   LockIcon,
@@ -12,7 +11,6 @@ import {
   CheckCircleIcon,
   XIcon,
   SendIcon,
-  LoaderIcon,
   AlertTriangleIcon,
   UserIcon,
   GraduationCapIcon
@@ -23,6 +21,7 @@ export default function StudentTicketsPage() {
   const {
     loggedInStudent,
     tickets,
+    ticketsLoading,
     login,
     createTicket,
     replyToTicket,
@@ -47,12 +46,20 @@ export default function StudentTicketsPage() {
     ? tickets.filter((t) => t.studentMatricule === loggedInStudent.matricule)
     : [];
 
+  // Sync active ticket when tickets list updates
+  useEffect(() => {
+    if (activeTicket) {
+      const updated = tickets.find((t) => t.id === activeTicket.id);
+      if (updated) setActiveTicket(updated);
+    }
+  }, [tickets, activeTicket?.id]);
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
     const success = await login(matricule, password);
     if (!success) {
-      setLoginError('Invalid Student ID or Password. Use EP2026-1234 and password.');
+      setLoginError('Invalid Student ID or Password. Use your matricule and "password".');
     }
   };
 
@@ -73,18 +80,13 @@ export default function StudentTicketsPage() {
     const currentId = activeTicket.id;
     await replyToTicket(currentId, replyText, 'student');
     setReplyText('');
-
-    const updated = tickets.find((t) => t.id === currentId);
-    if (updated) {
-      setActiveTicket(updated);
-    }
   };
 
   // Render Login Card if not logged in
   if (!loggedInStudent) {
     return (
-      <div className="max-w-md mx-auto my-12 font-sans bg-white text-slate-905">
-        <div className="bg-white border border-slate-255 rounded-3xl p-8 shadow-xl space-y-6">
+      <div className="max-w-md mx-auto my-12 font-sans bg-white text-slate-900">
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-xl space-y-6">
           <div className="text-center space-y-2">
             <div className="w-12 h-12 bg-blue-50 text-blue-800 rounded-2xl flex items-center justify-center mx-auto border border-blue-100">
               <LockIcon className="w-5 h-5" />
@@ -125,7 +127,7 @@ export default function StudentTicketsPage() {
             </div>
 
             {loginError && (
-              <div className="bg-red-50 text-red-800 text-xs p-3.5 rounded-xl border border-red-150 flex items-start space-x-2">
+              <div className="bg-red-50 text-red-800 text-xs p-3.5 rounded-xl border border-red-200 flex items-start space-x-2">
                 <AlertCircleIcon className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>{loginError}</span>
               </div>
@@ -148,7 +150,7 @@ export default function StudentTicketsPage() {
           </form>
 
           <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-1.5 text-xs text-slate-700">
-            <span className="font-extrabold text-slate-800 block">Simulated Demo Account:</span>
+            <span className="font-extrabold text-slate-800 block">Demo Account Credentials:</span>
             <p>Student ID: <code className="font-mono bg-slate-50 px-1 py-0.5 border border-slate-200 rounded text-blue-800 font-bold">EP2026-1234</code></p>
             <p>Password: <code className="font-mono bg-slate-50 px-1 py-0.5 border border-slate-200 rounded text-blue-800 font-bold">password</code></p>
           </div>
@@ -159,7 +161,7 @@ export default function StudentTicketsPage() {
 
   // Render Logged In portal
   return (
-    <div className="space-y-8 font-sans bg-white text-slate-905">
+    <div className="space-y-8 font-sans bg-white text-slate-900">
       {/* Header Profile Dashboard */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center space-x-4">
@@ -244,7 +246,13 @@ export default function StudentTicketsPage() {
             </button>
           </div>
 
-          {studentTickets.length > 0 ? (
+          {ticketsLoading ? (
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-3 animate-pulse">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-10 bg-slate-100 rounded-xl"></div>
+              ))}
+            </div>
+          ) : studentTickets.length > 0 ? (
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -267,7 +275,7 @@ export default function StudentTicketsPage() {
                         }`}
                       >
                         <td className="p-4 pl-6 font-mono font-bold text-slate-800">
-                          {ticket.id}
+                          #{ticket.id.slice(-6)}
                         </td>
                         <td className="p-4 font-bold text-slate-900 truncate max-w-[200px]">
                           {ticket.subject}
@@ -279,8 +287,8 @@ export default function StudentTicketsPage() {
                               Open
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-50 text-green-800 border border-green-205">
-                              <span className="w-1.5 h-1.5 rounded-full bg-green-550 mr-1.5"></span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-50 text-green-800 border border-green-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span>
                               Closed
                             </span>
                           )}
@@ -302,7 +310,7 @@ export default function StudentTicketsPage() {
               </div>
               <h3 className="text-sm font-bold text-slate-900">No support tickets</h3>
               <p className="text-xs text-slate-700">
-                You haven't opened any support tickets yet. Click the button above to submit a claim.
+                You haven&apos;t opened any support tickets yet. Click the button above to submit a claim.
               </p>
             </div>
           )}
@@ -316,7 +324,7 @@ export default function StudentTicketsPage() {
               <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] font-mono text-slate-700 font-bold uppercase">
-                    {activeTicket.id}
+                    #{activeTicket.id.slice(-6)}
                   </span>
                   <h3 className="text-sm font-extrabold text-slate-900 truncate max-w-[180px]">
                     {activeTicket.subject}
@@ -384,7 +392,7 @@ export default function StudentTicketsPage() {
                   />
                   <button
                     type="submit"
-                    disabled={!replyText.trim()}
+                    disabled={!replyText.trim() || isLoading}
                     className="bg-blue-800 text-white p-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 cursor-pointer"
                   >
                     <SendIcon className="w-4 h-4" />
@@ -409,7 +417,7 @@ export default function StudentTicketsPage() {
       {/* Create Ticket Modal */}
       {isNewTicketOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-250 rounded-3xl w-full max-w-md shadow-2xl p-6 relative animate-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md shadow-2xl p-6 relative animate-in zoom-in-95 duration-200">
             <button
               onClick={() => setIsNewTicketOpen(false)}
               className="absolute top-4 right-4 text-slate-700 hover:text-slate-950 transition cursor-pointer"
@@ -460,9 +468,10 @@ export default function StudentTicketsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-blue-800 hover:bg-blue-700 text-white rounded-xl font-bold transition shadow-md shadow-blue-800/10 active:scale-95 cursor-pointer"
+                  disabled={isLoading}
+                  className="px-5 py-2.5 bg-blue-800 hover:bg-blue-700 text-white rounded-xl font-bold transition shadow-md shadow-blue-800/10 active:scale-95 cursor-pointer disabled:opacity-50"
                 >
-                  Submit Ticket
+                  {isLoading ? 'Submitting...' : 'Submit Ticket'}
                 </button>
               </div>
             </form>

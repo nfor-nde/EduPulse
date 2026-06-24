@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EduPulse - University of Buea Student Portal & CRM",
-  description: "The official EdTech platform and student dashboard for the University of Buea.",
+  title: "EduPulse - University Student Portal & CRM",
+  description: "EduPulse is a modern EdTech platform and CRM system for higher education institutions, providing student portals, resource libraries, and administrative dashboards.",
 };
 
 export default function RootLayout({

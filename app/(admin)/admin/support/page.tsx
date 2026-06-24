@@ -1,7 +1,6 @@
-'use strict';
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import {
   MessageSquareIcon,
@@ -22,35 +21,27 @@ export default function AdminSupportPage() {
     ? students.find((s) => s.matricule === activeTicket.studentMatricule)
     : null;
 
+  // Sync activeTicket whenever tickets list updates from API
+  useEffect(() => {
+    if (activeTicket) {
+      const updated = tickets.find((t) => t.id === activeTicket.id);
+      if (updated) setActiveTicket(updated);
+    }
+  }, [tickets, activeTicket?.id]);
+
   const handleSendAdminReply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyText.trim() || !activeTicket) return;
-
-    const currentId = activeTicket.id;
-    await replyToTicket(currentId, replyText, 'admin');
-
+    await replyToTicket(activeTicket.id, replyText, 'admin');
     setReplyText('');
-    
-    const updated = tickets.find((t) => t.id === currentId);
-    if (updated) {
-      setActiveTicket(updated);
-    }
   };
 
   const handleResolveTicket = async (ticketId: string) => {
     await updateTicketStatus(ticketId, 'closed');
-    const updated = tickets.find((t) => t.id === ticketId);
-    if (updated) {
-      setActiveTicket(updated);
-    }
   };
 
   const handleReopenTicket = async (ticketId: string) => {
     await updateTicketStatus(ticketId, 'open');
-    const updated = tickets.find((t) => t.id === ticketId);
-    if (updated) {
-      setActiveTicket(updated);
-    }
   };
 
   return (

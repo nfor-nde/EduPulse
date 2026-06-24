@@ -1,0 +1,74 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Student {
+  id            String   @id @default(uuid())
+  name          String
+  matricule     String   @unique
+  instEmail     String
+  personalEmail String
+  phone         String
+  faculty       String
+  dept          String
+  level         Int
+  tuitionStatus String   // "Paid" | "Overdue"
+  medicalStatus String   // "Cleared" | "Pending"
+  createdAt     DateTime @default(now())
+}
+
+model Resource {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  type        String   // "pastpaper" | "notes" | "youtube"
+  url         String
+  faculty     String
+  dept        String
+  level       Int
+  createdAt   DateTime @default(now())
+}
+
+model Ticket {
+  id               String    @id @default(uuid())
+  studentMatricule String
+  subject          String
+  description      String    @db.Text
+  status           String    // "open" | "closed"
+  date             String
+  messages         Message[]
+  createdAt        DateTime  @default(now())
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  sender    String   // "student" | "admin"
+  text      String   @db.Text
+  date      String
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Campaign {
+  id        String   @id @default(uuid())
+  title     String
+  audience  String
+  message   String   @db.Text
+  sentDate  String
+  status    String   // "Sent" | "Draft"
+  createdAt DateTime @default(now())
+}
+
+model ActivityFeed {
+  id        String   @id @default(uuid())
+  action    String
+  user      String
+  time      String
+  createdAt DateTime @default(now())
+}
