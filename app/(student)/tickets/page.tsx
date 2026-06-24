@@ -13,7 +13,8 @@ import {
   SendIcon,
   AlertTriangleIcon,
   UserIcon,
-  GraduationCapIcon
+  GraduationCapIcon,
+  LogOutIcon
 } from '@/components/icons';
 import { Ticket } from '@/types';
 
@@ -23,9 +24,11 @@ export default function StudentTicketsPage() {
     tickets,
     ticketsLoading,
     login,
+    logout,
     createTicket,
     replyToTicket,
-    isLoading
+    isLoading,
+    sessionLoading
   } = useApp();
 
   // Login form state
@@ -81,6 +84,26 @@ export default function StudentTicketsPage() {
     await replyToTicket(currentId, replyText, 'student');
     setReplyText('');
   };
+
+  // Show skeleton while session is being restored from cookie
+  if (sessionLoading) {
+    return (
+      <div className="max-w-md mx-auto my-12 font-sans">
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-xl space-y-6 animate-pulse">
+          <div className="flex flex-col items-center space-y-3">
+            <div className="w-12 h-12 bg-slate-100 rounded-2xl"></div>
+            <div className="h-6 bg-slate-100 rounded-full w-48"></div>
+            <div className="h-4 bg-slate-100 rounded w-64"></div>
+          </div>
+          <div className="space-y-3">
+            <div className="h-10 bg-slate-100 rounded-xl"></div>
+            <div className="h-10 bg-slate-100 rounded-xl"></div>
+            <div className="h-12 bg-slate-100 rounded-xl"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Render Login Card if not logged in
   if (!loggedInStudent) {
@@ -225,6 +248,16 @@ export default function StudentTicketsPage() {
               </p>
             </div>
           </div>
+
+          {/* Logout Button */}
+          <button
+            onClick={() => logout()}
+            className="flex-shrink-0 flex items-center space-x-1.5 text-xs font-bold text-slate-500 hover:text-red-700 hover:bg-red-50 border border-slate-200 hover:border-red-200 px-3 py-2 rounded-xl transition cursor-pointer"
+            title="Sign out"
+          >
+            <LogOutIcon className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Sign Out</span>
+          </button>
         </div>
       </div>
 

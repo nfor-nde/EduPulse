@@ -16,7 +16,7 @@ import {
 import { useApp } from '@/context/AppContext';
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
-  const { loggedInStudent, logout } = useApp();
+  const { loggedInStudent, logout, sessionLoading } = useApp();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -69,7 +69,9 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
             {/* Auth / Student ID Info (Desktop) */}
             <div className="hidden md:flex items-center space-x-4">
-              {loggedInStudent ? (
+              {sessionLoading ? (
+                <div className="w-28 h-8 bg-slate-100 rounded-full animate-pulse"></div>
+              ) : loggedInStudent ? (
                 <div className="flex items-center space-x-3 bg-white py-1.5 pl-3 pr-4 rounded-full border border-slate-200">
                   <div className="w-8 h-8 rounded-full bg-blue-800 text-white flex items-center justify-center font-bold text-xs">
                     {loggedInStudent.name.charAt(0)}

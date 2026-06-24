@@ -6,9 +6,7 @@ import {
   FilterIcon,
   VideoIcon,
   FileTextIcon,
-  XIcon,
-  ZoomInIcon,
-  ZoomOutIcon
+  XIcon
 } from '@/components/icons';
 import { Resource } from '@/types';
 
@@ -23,7 +21,6 @@ export default function StudentResourcesPage() {
 
   // Resource Viewer state
   const [viewingResource, setViewingResource] = useState<Resource | null>(null);
-  const [pdfZoom, setPdfZoom] = useState(100);
 
   // Derive unique filter options from all resources
   const faculties = Array.from(new Set(allResources.map((r) => r.faculty)));
@@ -116,47 +113,9 @@ export default function StudentResourcesPage() {
     }
   };
 
-  const getMockPdfContent = (resource: Resource) => {
-    return (
-      <div
-        className="space-y-6 text-slate-900 leading-relaxed max-w-2xl mx-auto p-4 transition-all duration-300 select-text"
-        style={{ fontSize: `${(pdfZoom / 100) * 14}px` }}
-      >
-        <div className="border-b border-slate-300 pb-4 text-center">
-          <span className="text-[10px] font-bold text-blue-800 tracking-wider uppercase">{resource.faculty}</span>
-          <h2 className="text-xl font-black text-slate-900 mt-1">{resource.title}</h2>
-          <p className="text-xs text-slate-700 mt-1">Level {resource.level} &bull; {resource.dept}</p>
-        </div>
-
-        <div className="space-y-4">
-          <h3 className="text-base font-bold text-slate-950">1. Executive Overview</h3>
-          <p>
-            This document outlines the core learning modules, standard schemas, and operational instructions relevant to the course syllabus. Students are requested to audit all sections carefully.
-          </p>
-          <div className="bg-blue-50/50 p-4 border border-blue-200 rounded-xl my-2 text-xs">
-            <span className="font-extrabold text-blue-900 block mb-1">Key Revision Guideline:</span>
-            {resource.description}
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <h3 className="text-base font-bold text-slate-950">2. Technical Framework Details</h3>
-          <p>
-            When preparing for final examinations, particular focus should be given to conceptual paradigms, algorithmic workflows, and standard industry application examples.
-          </p>
-          <ul className="list-disc pl-5 space-y-1.5 list-inside text-slate-850">
-            <li>Review all chapter summaries and laboratory assignments.</li>
-            <li>Consult previous term past papers to understand question schemas.</li>
-            <li>Collaborate with classmates on case studies and project portfolios.</li>
-          </ul>
-        </div>
-
-        <div className="border-t border-slate-350 pt-8 mt-12 text-center text-[10px] text-slate-500 font-mono">
-          End of Document &bull; Compiled by EduPulse Resource Registry
-        </div>
-      </div>
-    );
-  };
+  // Determine if this resource URL is an external (real) PDF
+  const isExternalPdf = (url: string) =>
+    url.startsWith('https://') && !url.startsWith('https://www.youtube.com');
 
   return (
     <div className="space-y-8 font-sans bg-white text-slate-900">
@@ -301,7 +260,6 @@ export default function StudentResourcesPage() {
                 <button
                   onClick={() => {
                     setViewingResource(resource);
-                    setPdfZoom(100);
                   }}
                   className="inline-flex items-center space-x-1.5 bg-blue-800 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-sm hover:scale-102 active:scale-98 cursor-pointer"
                 >
@@ -351,25 +309,16 @@ export default function StudentResourcesPage() {
                 </span>
               </div>
               <div className="flex items-center space-x-3">
-                {viewingResource.type !== 'youtube' && (
+                {viewingResource.type !== 'youtube' && isExternalPdf(viewingResource.url) && (
                   <div className="flex items-center space-x-2 border-r border-slate-200 pr-3">
-                    <button
-                      onClick={() => setPdfZoom(Math.max(50, pdfZoom - 10))}
-                      className="p-1 hover:bg-slate-100 rounded transition text-slate-700 cursor-pointer"
-                      title="Zoom Out"
+                    <a
+                      href={viewingResource.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-bold text-blue-800 hover:underline px-2 py-1 border border-blue-200 bg-blue-50 rounded-lg transition cursor-pointer"
                     >
-                      <ZoomOutIcon className="w-4 h-4" />
-                    </button>
-                    <span className="text-xs font-mono font-bold text-slate-800 w-10 text-center">
-                      {pdfZoom}%
-                    </span>
-                    <button
-                      onClick={() => setPdfZoom(Math.min(200, pdfZoom + 10))}
-                      className="p-1 hover:bg-slate-100 rounded transition text-slate-700 cursor-pointer"
-                      title="Zoom In"
-                    >
-                      <ZoomInIcon className="w-4 h-4" />
-                    </button>
+                      Open in New Tab
+                    </a>
                   </div>
                 )}
                 <button
@@ -381,10 +330,9 @@ export default function StudentResourcesPage() {
               </div>
             </div>
 
-            {/* Modal Body Container */}
-            <div className="flex-1 bg-white overflow-y-auto p-6">
+            <div className="flex-1 bg-white overflow-hidden">
               {viewingResource.type === 'youtube' ? (
-                <div className="relative pb-[56.25%] h-0 rounded-2xl overflow-hidden shadow-md border border-slate-200 bg-slate-950">
+                <div className="relative pb-[56.25%] h-0 rounded-2xl overflow-hidden shadow-md border border-slate-200 bg-slate-950 mx-6 mt-6">
                   <iframe
                     className="absolute top-0 left-0 w-full h-full"
                     src={viewingResource.url}
@@ -393,9 +341,27 @@ export default function StudentResourcesPage() {
                     allowFullScreen
                   ></iframe>
                 </div>
+              ) : isExternalPdf(viewingResource.url) ? (
+                <iframe
+                  src={viewingResource.url}
+                  className="w-full h-full min-h-[60vh] border-0"
+                  title={viewingResource.title}
+                  loading="lazy"
+                />
               ) : (
-                <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-inner min-h-[60vh]">
-                  {getMockPdfContent(viewingResource)}
+                <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-inner min-h-[60vh] m-6 overflow-y-auto">
+                  <div className="space-y-6 text-slate-900 leading-relaxed max-w-2xl mx-auto select-text">
+                    <div className="border-b border-slate-200 pb-4 text-center">
+                      <span className="text-[10px] font-bold text-blue-800 tracking-wider uppercase">{viewingResource.faculty}</span>
+                      <h2 className="text-xl font-black text-slate-900 mt-1">{viewingResource.title}</h2>
+                      <p className="text-xs text-slate-700 mt-1">Level {viewingResource.level} &bull; {viewingResource.dept}</p>
+                    </div>
+                    <div className="bg-blue-50 p-4 border border-blue-200 rounded-xl text-xs">
+                      <span className="font-extrabold text-blue-900 block mb-1">Description:</span>
+                      {viewingResource.description}
+                    </div>
+                    <p className="text-xs text-slate-700">This document is available as a downloadable resource. Please consult the course coordinator for the physical copy or check the university intranet.</p>
+                  </div>
                 </div>
               )}
             </div>

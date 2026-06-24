@@ -11,12 +11,13 @@ interface AppContextType {
   activityFeed: ActivityFeed[];
   loggedInStudent: Student | null;
   isLoading: boolean;
+  sessionLoading: boolean;
   studentsLoading: boolean;
   resourcesLoading: boolean;
   ticketsLoading: boolean;
   campaignsLoading: boolean;
   login: (matricule: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   createTicket: (subject: string, description: string) => Promise<void>;
   replyToTicket: (ticketId: string, text: string, sender: 'student' | 'admin') => Promise<void>;
   updateTicketStatus: (ticketId: string, status: 'open' | 'closed') => Promise<void>;
@@ -40,6 +41,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [activityFeed, setActivityFeed] = useState<ActivityFeed[]>([]);
   const [loggedInStudent, setLoggedInStudent] = useState<Student | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [sessionLoading, setSessionLoading] = useState<boolean>(true); // true until we verify session
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [resourcesLoading, setResourcesLoading] = useState(false);
   const [ticketsLoading, setTicketsLoading] = useState(false);
@@ -117,14 +119,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Load all data on mount
+  // Restore session from JWT cookie on app mount
+  const restoreSession = useCallback(async () => {
+    setSessionLoading(true);
+    try {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const student: Student = await res.json();
+        setLoggedInStudent(student);
+        // Load this student's tickets specifically
+        await refreshTickets(student.matricule);
+      }
+      // If 401, user is not logged in — that's fine, session stays null
+    } catch {
+      // Network error — just skip, user will see login form
+    } finally {
+      setSessionLoading(false);
+    }
+  }, [refreshTickets]);
+
+  // Load all global data + restore session on mount
   useEffect(() => {
     refreshResources();
     refreshStudents();
     refreshTickets();
     refreshCampaigns();
     refreshActivity();
-  }, [refreshResources, refreshStudents, refreshTickets, refreshCampaigns, refreshActivity]);
+    restoreSession();
+  }, [refreshResources, refreshStudents, refreshTickets, refreshCampaigns, refreshActivity, restoreSession]);
 
   // --- Auth ---
 
@@ -159,9 +181,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const logout = async (): Promise<void> => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // Ignore network errors on logout
+    }
     setLoggedInStudent(null);
-    refreshTickets(); // reset to all tickets
+    await refreshTickets(); // Reset to all tickets view
   };
 
   // --- Tickets ---
@@ -180,7 +207,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }),
       });
       if (!res.ok) throw new Error('Failed to create ticket');
-      // Refresh student's tickets and global activity
       await refreshTickets(loggedInStudent.matricule);
       await refreshActivity();
     } catch (err) {
@@ -204,11 +230,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
       if (!res.ok) throw new Error('Failed to reply to ticket');
       const updatedTicket: Ticket = await res.json();
-
-      // Update in-memory tickets list
-      setTickets((prev) =>
-        prev.map((t) => (t.id === ticketId ? updatedTicket : t))
-      );
+      setTickets((prev) => prev.map((t) => (t.id === ticketId ? updatedTicket : t)));
       await refreshActivity();
     } catch (err) {
       console.error('replyToTicket error:', err);
@@ -230,10 +252,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
       if (!res.ok) throw new Error('Failed to update ticket status');
       const updatedTicket: Ticket = await res.json();
-
-      setTickets((prev) =>
-        prev.map((t) => (t.id === ticketId ? updatedTicket : t))
-      );
+      setTickets((prev) => prev.map((t) => (t.id === ticketId ? updatedTicket : t)));
       await refreshActivity();
     } catch (err) {
       console.error('updateTicketStatus error:', err);
@@ -254,11 +273,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
       if (!res.ok) throw new Error('Failed to update tuition status');
       const updatedStudent: Student = await res.json();
-
-      setStudents((prev) =>
-        prev.map((s) => (s.id === studentId ? updatedStudent : s))
-      );
-
+      setStudents((prev) => prev.map((s) => (s.id === studentId ? updatedStudent : s)));
       if (loggedInStudent && loggedInStudent.id === studentId) {
         setLoggedInStudent(updatedStudent);
       }
@@ -280,11 +295,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
       if (!res.ok) throw new Error('Failed to update medical status');
       const updatedStudent: Student = await res.json();
-
-      setStudents((prev) =>
-        prev.map((s) => (s.id === studentId ? updatedStudent : s))
-      );
-
+      setStudents((prev) => prev.map((s) => (s.id === studentId ? updatedStudent : s)));
       if (loggedInStudent && loggedInStudent.id === studentId) {
         setLoggedInStudent(updatedStudent);
       }
@@ -312,7 +323,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
       if (!res.ok) throw new Error('Failed to send campaign');
       const newCampaign: Campaign = await res.json();
-
       setCampaigns((prev) => [newCampaign, ...prev]);
       await refreshActivity();
     } catch (err) {
@@ -332,6 +342,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         activityFeed,
         loggedInStudent,
         isLoading,
+        sessionLoading,
         studentsLoading,
         resourcesLoading,
         ticketsLoading,
