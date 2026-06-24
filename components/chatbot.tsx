@@ -1,7 +1,14 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Bot, User, Check, GraduationCap } from 'lucide-react';
+import {
+  MessageSquareIcon,
+  XIcon,
+  SendIcon,
+  BotIcon,
+  UserIcon,
+  GraduationCapIcon
+} from '@/components/icons';
 
 interface ChatMessage {
   id: string;
@@ -16,7 +23,7 @@ export default function Chatbot() {
     {
       id: 'm1',
       sender: 'bot',
-      text: 'Hello! Welcome to EduPulse UB Support. How can I assist you today?',
+      text: 'Hello! Welcome to the Academic Portal Support. How can I assist you today?',
       timestamp: '10:00 AM',
     },
     {
@@ -57,13 +64,13 @@ export default function Chatbot() {
       
       const lowerText = text.toLowerCase();
       if (lowerText.includes('tuition') || lowerText.includes('fee') || lowerText.includes('pay')) {
-        reply = 'To clear tuition fees, make payments through MTN Mobile Money or Orange Money. Once paid, the system updates within 24 hours. If it exceeds, please submit a Support Ticket with your transaction ID.';
+        reply = 'To clear tuition fees, make payments through Mobile Money or credit card. Once paid, the system updates within 24 hours. If it exceeds, please submit a Support Ticket with your transaction ID.';
       } else if (lowerText.includes('medical') || lowerText.includes('clearance') || lowerText.includes('clinic')) {
-        reply = 'Medical clearance requires you to undergo screening at the University Health Center. Once physical files are submitted, the admin clearances will show "Cleared" in your portal.';
+        reply = 'Medical clearance requires you to undergo screening at the University Health Center. Once files are submitted, the status will show "Cleared" in your portal.';
       } else if (lowerText.includes('email') || lowerText.includes('office') || lowerText.includes('microsoft')) {
-        reply = 'For institutional Office 365 email resets, please submit a Support Ticket in the tickets tab detailing your Matricule and department. An IT support administrator will reset it.';
-      } else if (lowerText.includes('matricule') || lowerText.includes('login') || lowerText.includes('password')) {
-        reply = 'To log into the Student Portal, use Matricule UB20S1234 and password: password. This is our standard simulated testing account.';
+        reply = 'For institutional account email resets, please submit a Support Ticket in the tickets tab detailing your Student ID and department.';
+      } else if (lowerText.includes('id') || lowerText.includes('login') || lowerText.includes('password')) {
+        reply = 'To log into the Student Portal, use ID: EP2026-1234 and password: password.';
       }
 
       const botMsg: ChatMessage = {
@@ -94,23 +101,23 @@ export default function Chatbot() {
       {/* Chat button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-14 h-14 bg-blue-800 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 transition duration-300 hover:scale-105 focus:outline-none"
+        className="w-14 h-14 bg-blue-800 text-white rounded-full flex items-center justify-center shadow-xl hover:bg-blue-700 transition duration-300 hover:scale-105 focus:outline-none cursor-pointer"
         aria-label="Toggle support chatbot"
       >
-        {isOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+        {isOpen ? <XIcon className="w-5 h-5" /> : <MessageSquareIcon className="w-5 h-5" />}
       </button>
 
       {/* Chat window panel */}
       {isOpen && (
-        <div className="absolute bottom-16 right-0 w-80 md:w-96 h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden transition-all duration-300 animate-in fade-in slide-in-from-bottom-5">
+        <div className="absolute bottom-16 right-0 w-80 md:w-96 h-[500px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-300 animate-in fade-in slide-in-from-bottom-5">
           {/* Header */}
           <div className="bg-blue-800 text-white p-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-full bg-blue-900/60 flex items-center justify-center border border-blue-400/30">
-                <GraduationCap className="w-6 h-6 text-white" />
+                <GraduationCapIcon className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-sm">UB Support Bot</h3>
+                <h3 className="font-semibold text-sm">Academic Support Bot</h3>
                 <div className="flex items-center space-x-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse"></span>
                   <span className="text-xs text-blue-200">Online &bull; EduPulse Hub</span>
@@ -119,14 +126,14 @@ export default function Chatbot() {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-blue-100 hover:text-white transition"
+              className="text-blue-100 hover:text-white transition cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <XIcon className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
+          {/* Messages Area - Pure White Background for readability */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -136,22 +143,22 @@ export default function Chatbot() {
               >
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    msg.sender === 'bot' ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-700'
+                    msg.sender === 'bot' ? 'bg-blue-50 text-blue-800 border border-blue-100' : 'bg-slate-100 text-slate-800 border border-slate-200'
                   }`}
                 >
-                  {msg.sender === 'bot' ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                  {msg.sender === 'bot' ? <BotIcon className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
                 </div>
                 <div className="max-w-[75%]">
                   <div
                     className={`p-3 rounded-2xl text-sm ${
                       msg.sender === 'bot'
-                        ? 'bg-white border border-gray-100 text-gray-800 rounded-tl-none shadow-sm'
+                        ? 'bg-white border border-slate-200 text-slate-900 rounded-tl-none shadow-sm'
                         : 'bg-blue-800 text-white rounded-tr-none'
                     }`}
                   >
                     {msg.text}
                   </div>
-                  <span className="text-[10px] text-gray-400 mt-1 block px-1">
+                  <span className="text-[10px] text-slate-500 mt-1 block px-1">
                     {msg.timestamp}
                   </span>
                 </div>
@@ -160,26 +167,26 @@ export default function Chatbot() {
 
             {isTyping && (
               <div className="flex items-start space-x-2">
-                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-800 flex items-center justify-center flex-shrink-0 border border-blue-100">
+                  <BotIcon className="w-4 h-4" />
                 </div>
-                <div className="bg-white border border-gray-100 text-gray-500 rounded-2xl rounded-tl-none p-3 shadow-sm flex items-center space-x-1">
-                  <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
-                  <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                  <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                <div className="bg-white border border-slate-200 text-slate-500 rounded-2xl rounded-tl-none p-3 shadow-sm flex items-center space-x-1">
+                  <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></span>
+                  <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                  <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Questions (only show if no custom user replies yet, or as suggestions) */}
-          <div className="px-4 py-2 bg-gray-50 border-t border-gray-100 overflow-x-auto flex space-x-2 scrollbar-none whitespace-nowrap">
+          {/* Quick Questions Suggestions */}
+          <div className="px-4 py-2 bg-white border-t border-slate-200 overflow-x-auto flex space-x-2 scrollbar-none whitespace-nowrap">
             {quickPrompts.map((prompt, i) => (
               <button
                 key={i}
                 onClick={() => handleSendMessage(prompt)}
-                className="text-xs bg-white border border-gray-200 text-blue-800 px-3 py-1.5 rounded-full hover:bg-blue-50 transition active:scale-95 flex-shrink-0 font-medium"
+                className="text-xs bg-white border border-slate-200 text-blue-800 px-3 py-1.5 rounded-full hover:bg-blue-50 transition active:scale-95 flex-shrink-0 font-medium cursor-pointer"
               >
                 {prompt}
               </button>
@@ -187,21 +194,21 @@ export default function Chatbot() {
           </div>
 
           {/* Input field */}
-          <div className="p-3 bg-white border-t border-gray-100 flex items-center space-x-2">
+          <div className="p-3 bg-white border-t border-slate-200 flex items-center space-x-2">
             <input
               type="text"
-              placeholder="Ask UB Support..."
+              placeholder="Ask support..."
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
               onKeyDown={handleKeyPress}
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-gray-50"
+              className="flex-1 px-4 py-2 border border-slate-200 rounded-full text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white text-slate-900"
             />
             <button
               onClick={() => handleSendMessage(inputVal)}
               disabled={!inputVal.trim()}
-              className="w-9 h-9 rounded-full bg-blue-800 text-white flex items-center justify-center hover:bg-blue-700 transition disabled:opacity-50 disabled:hover:bg-blue-800"
+              className="w-9 h-9 rounded-full bg-blue-800 text-white flex items-center justify-center hover:bg-blue-700 transition disabled:opacity-50 cursor-pointer"
             >
-              <Send className="w-4 h-4" />
+              <SendIcon className="w-4 h-4" />
             </button>
           </div>
         </div>

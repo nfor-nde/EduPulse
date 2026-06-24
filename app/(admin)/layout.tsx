@@ -5,19 +5,18 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  GraduationCap,
-  LayoutDashboard,
-  Users,
-  CreditCard,
-  Megaphone,
-  LifeBuoy,
-  ChevronLeft,
-  ChevronRight,
-  Menu,
-  Bell,
-  LogOut,
-  UserCheck
-} from 'lucide-react';
+  GraduationCapIcon,
+  DashboardIcon,
+  UsersIcon,
+  CreditCardIcon,
+  MegaphoneIcon,
+  SupportIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  MenuIcon,
+  BellIcon,
+  LogOutIcon
+} from '@/components/icons';
 import { useApp } from '@/context/AppContext';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -26,7 +25,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Stats for indicators
   const openTicketsCount = tickets.filter((t) => t.status === 'open').length;
   const overdueTuitionCount = students.filter((s) => s.tuitionStatus === 'Overdue').length;
 
@@ -34,56 +32,56 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     {
       name: 'Overview',
       href: '/admin/overview',
-      icon: LayoutDashboard,
+      icon: DashboardIcon,
       badge: null,
     },
     {
       name: 'Students',
       href: '/admin/students',
-      icon: Users,
+      icon: UsersIcon,
       badge: students.length,
     },
     {
       name: 'Finance',
       href: '/admin/finance',
-      icon: CreditCard,
+      icon: CreditCardIcon,
       badge: overdueTuitionCount > 0 ? overdueTuitionCount : null,
     },
     {
       name: 'Campaigns',
       href: '/admin/campaigns',
-      icon: Megaphone,
+      icon: MegaphoneIcon,
       badge: null,
     },
     {
       name: 'Support',
       href: '/admin/support',
-      icon: LifeBuoy,
+      icon: SupportIcon,
       badge: openTicketsCount > 0 ? openTicketsCount : null,
     },
   ];
 
   return (
-    <div className="flex min-h-screen bg-gray-50/50 font-sans">
+    <div className="flex min-h-screen bg-white text-slate-900 font-sans">
       {/* Sidebar - Desktop */}
       <aside
-        className={`hidden md:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 relative ${
+        className={`hidden md:flex flex-col bg-white border-r border-slate-200 transition-all duration-300 relative ${
           isCollapsed ? 'w-20' : 'w-64'
         }`}
       >
         {/* Sidebar Header */}
-        <div className="h-16 flex items-center px-4 border-b border-gray-100 justify-between">
+        <div className="h-16 flex items-center px-4 border-b border-slate-200 justify-between">
           <Link href="/" className="flex items-center space-x-2.5 overflow-hidden">
             <div className="w-9 h-9 rounded-xl bg-blue-800 flex items-center justify-center text-white flex-shrink-0 shadow-md">
-              <GraduationCap className="w-5 h-5" />
+              <GraduationCapIcon className="w-5 h-5" />
             </div>
             {!isCollapsed && (
               <div className="transition duration-300">
-                <span className="font-bold text-sm text-gray-900 tracking-tight block leading-none">
+                <span className="font-extrabold text-sm text-slate-900 tracking-tight block leading-none">
                   EduPulse CRM
                 </span>
-                <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wide">
-                  UB Administration
+                <span className="text-[9px] text-slate-700 font-bold uppercase tracking-wide">
+                  Academic Console
                 </span>
               </div>
             )}
@@ -91,23 +89,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-1 bg-white">
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition group ${
+                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition border border-transparent ${
                   isActive
-                    ? 'bg-blue-50 text-blue-850'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'bg-blue-50 text-blue-900 border-blue-100'
+                    : 'text-slate-750 hover:text-slate-950 hover:bg-slate-50'
                 }`}
               >
                 <div className="flex items-center space-x-3">
                   <item.icon
                     className={`w-4 h-4 flex-shrink-0 transition ${
-                      isActive ? 'text-blue-800' : 'text-gray-400 group-hover:text-gray-600'
+                      isActive ? 'text-blue-800' : 'text-slate-600'
                     }`}
                   />
                   {!isCollapsed && <span>{item.name}</span>}
@@ -117,8 +115,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <span
                     className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
                       item.name === 'Support' || item.name === 'Finance'
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-blue-100 text-blue-800'
+                        ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                        : 'bg-blue-100 text-blue-800 border border-blue-200'
                     }`}
                   >
                     {item.badge}
@@ -132,12 +130,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Sidebar Collapse Toggle Button */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute bottom-6 -right-3.5 w-7 h-7 rounded-full bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 shadow-sm cursor-pointer"
+          className="absolute bottom-6 -right-3.5 w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50 shadow-sm cursor-pointer"
         >
           {isCollapsed ? (
-            <ChevronRight className="w-4 h-4 text-gray-500" />
+            <ChevronRightIcon className="w-4 h-4 text-slate-700" />
           ) : (
-            <ChevronLeft className="w-4 h-4 text-gray-500" />
+            <ChevronLeftIcon className="w-4 h-4 text-slate-700" />
           )}
         </button>
       </aside>
@@ -145,23 +143,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Mobile Drawer Navigation */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden animate-in fade-in duration-200">
-          <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-xs" onClick={() => setMobileOpen(false)}></div>
-          <aside className="relative w-64 bg-white flex flex-col p-4 animate-in slide-in-from-left duration-200 shadow-2xl">
-            <div className="flex items-center space-x-2.5 mb-6 pb-4 border-b border-gray-100">
+          <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs" onClick={() => setMobileOpen(false)}></div>
+          <aside className="relative w-64 bg-white flex flex-col p-4 animate-in slide-in-from-left duration-200 shadow-2xl border-r border-slate-200">
+            <div className="flex items-center space-x-2.5 mb-6 pb-4 border-b border-slate-200">
               <div className="w-9 h-9 rounded-xl bg-blue-800 flex items-center justify-center text-white flex-shrink-0 shadow-md">
-                <GraduationCap className="w-5 h-5" />
+                <GraduationCapIcon className="w-5 h-5" />
               </div>
               <div>
-                <span className="font-bold text-sm text-gray-900 tracking-tight block leading-none">
+                <span className="font-bold text-sm text-slate-900 tracking-tight block leading-none">
                   EduPulse CRM
                 </span>
-                <span className="text-[9px] text-gray-500 font-bold uppercase">
-                  UB Administration
+                <span className="text-[9px] text-slate-700 font-bold uppercase">
+                  Academic Portal
                 </span>
               </div>
             </div>
 
-            <nav className="space-y-1.5 flex-1">
+            <nav className="space-y-1.5 flex-1 bg-white">
               {menuItems.map((item) => {
                 const isActive = pathname === item.href;
                 return (
@@ -169,16 +167,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     key={item.name}
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
-                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
-                      isActive ? 'bg-blue-50 text-blue-850' : 'text-gray-600 hover:bg-gray-50'
+                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition border border-transparent ${
+                      isActive ? 'bg-blue-50 text-blue-900 border-blue-100' : 'text-slate-750 hover:bg-slate-50'
                     }`}
                   >
                     <div className="flex items-center space-x-3">
-                      <item.icon className={`w-4 h-4 ${isActive ? 'text-blue-800' : 'text-gray-400'}`} />
+                      <item.icon className={`w-4 h-4 ${isActive ? 'text-blue-850' : 'text-slate-600'}`} />
                       <span>{item.name}</span>
                     </div>
                     {item.badge !== null && (
-                      <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-[9px] font-bold">
+                      <span className="bg-blue-100 text-blue-850 px-2 py-0.5 rounded-full text-[9px] font-bold border border-blue-200">
                         {item.badge}
                       </span>
                     )}
@@ -187,12 +185,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               })}
             </nav>
 
-            <div className="pt-4 border-t border-gray-100">
+            <div className="pt-4 border-t border-slate-200">
               <Link
                 href="/"
-                className="w-full flex items-center space-x-2 justify-center py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50"
+                className="w-full flex items-center space-x-2 justify-center py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOutIcon className="w-3.5 h-3.5" />
                 <span>Exit CRM portal</span>
               </Link>
             </div>
@@ -201,54 +199,53 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 bg-white">
         {/* Header bar */}
-        <header className="h-16 bg-white border-b border-gray-250 flex items-center justify-between px-4 md:px-8">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8">
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setMobileOpen(true)}
-              className="p-2 -ml-2 text-gray-600 hover:bg-gray-50 rounded-xl md:hidden"
+              className="p-2 -ml-2 text-slate-700 hover:bg-slate-50 rounded-xl md:hidden cursor-pointer"
             >
-              <Menu className="w-5 h-5" />
+              <MenuIcon className="w-5 h-5" />
             </button>
-            <div className="hidden sm:block text-xs text-gray-400 font-semibold uppercase tracking-wider">
-              University of Buea CRM Desk
+            <div className="hidden sm:block text-[10px] text-slate-700 font-bold uppercase tracking-wider">
+              Administration CRM Console
             </div>
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Quick alert notifications indicator */}
             <div className="relative">
-              <button className="p-2 hover:bg-gray-50 rounded-full text-gray-500 hover:text-gray-800 transition">
-                <Bell className="w-4 h-4" />
+              <button className="p-2 hover:bg-slate-50 rounded-full text-slate-700 transition cursor-pointer">
+                <BellIcon className="w-4 h-4" />
                 {openTicketsCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-650 animate-pulse"></span>
                 )}
               </button>
             </div>
 
             {/* Profile widget */}
-            <div className="flex items-center space-x-3 pl-3 border-l border-gray-200">
-              <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-xs">
+            <div className="flex items-center space-x-3 pl-3 border-l border-slate-200">
+              <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-805 border border-blue-100 flex items-center justify-center font-bold text-xs">
                 AD
               </div>
               <div className="text-left hidden md:block">
-                <p className="text-xs font-bold text-gray-900 leading-none">Admin Control Desk</p>
-                <p className="text-[9px] text-gray-500 uppercase mt-0.5 font-bold">Registrar Desk</p>
+                <p className="text-xs font-bold text-slate-900 leading-none">Console Desk</p>
+                <p className="text-[9px] text-slate-700 font-bold uppercase mt-0.5">Administrator</p>
               </div>
               <Link
                 href="/"
-                className="p-1.5 text-gray-400 hover:text-red-600 transition"
+                className="p-1.5 text-slate-500 hover:text-red-600 transition cursor-pointer"
                 title="Exit Dashboard"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOutIcon className="w-4 h-4" />
               </Link>
             </div>
           </div>
         </header>
 
         {/* Dashboard Pages wrapper */}
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto max-w-7xl w-full mx-auto bg-white">
           {children}
         </main>
       </div>

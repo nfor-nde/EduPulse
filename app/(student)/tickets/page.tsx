@@ -4,19 +4,19 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import {
-  Lock,
-  Plus,
-  MessageSquare,
-  AlertCircle,
-  Clock,
-  CheckCircle,
-  X,
-  Send,
-  Loader2,
-  AlertTriangle,
-  User,
-  GraduationCap
-} from 'lucide-react';
+  LockIcon,
+  PlusIcon,
+  MessageSquareIcon,
+  AlertCircleIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  XIcon,
+  SendIcon,
+  LoaderIcon,
+  AlertTriangleIcon,
+  UserIcon,
+  GraduationCapIcon
+} from '@/components/icons';
 import { Ticket } from '@/types';
 
 export default function StudentTicketsPage() {
@@ -30,7 +30,7 @@ export default function StudentTicketsPage() {
   } = useApp();
 
   // Login form state
-  const [matricule, setMatricule] = useState('UB20S1234');
+  const [matricule, setMatricule] = useState('EP2026-1234');
   const [password, setPassword] = useState('password');
   const [loginError, setLoginError] = useState('');
 
@@ -43,7 +43,6 @@ export default function StudentTicketsPage() {
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
   const [replyText, setReplyText] = useState('');
 
-  // Filter student-specific tickets
   const studentTickets = loggedInStudent
     ? tickets.filter((t) => t.studentMatricule === loggedInStudent.matricule)
     : [];
@@ -53,7 +52,7 @@ export default function StudentTicketsPage() {
     setLoginError('');
     const success = await login(matricule, password);
     if (!success) {
-      setLoginError('Invalid Matricule or Password. Use UB20S1234 and password.');
+      setLoginError('Invalid Student ID or Password. Use EP2026-1234 and password.');
     }
   };
 
@@ -73,52 +72,46 @@ export default function StudentTicketsPage() {
 
     const currentId = activeTicket.id;
     await replyToTicket(currentId, replyText, 'student');
-    
-    // Update local state in view to show the new message
     setReplyText('');
-    // Re-sync active ticket
+
     const updated = tickets.find((t) => t.id === currentId);
     if (updated) {
       setActiveTicket(updated);
     }
   };
 
-  const handleSelectTicket = (ticket: Ticket) => {
-    setActiveTicket(ticket);
-  };
-
   // Render Login Card if not logged in
   if (!loggedInStudent) {
     return (
-      <div className="max-w-md mx-auto my-12 font-sans">
-        <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-xl space-y-6">
+      <div className="max-w-md mx-auto my-12 font-sans bg-white text-slate-905">
+        <div className="bg-white border border-slate-255 rounded-3xl p-8 shadow-xl space-y-6">
           <div className="text-center space-y-2">
             <div className="w-12 h-12 bg-blue-50 text-blue-800 rounded-2xl flex items-center justify-center mx-auto border border-blue-100">
-              <Lock className="w-6 h-6" />
+              <LockIcon className="w-5 h-5" />
             </div>
-            <h2 className="text-2xl font-black text-gray-900">Student Portal Login</h2>
-            <p className="text-xs text-gray-500">
+            <h2 className="text-2xl font-black text-slate-900">Student Portal Login</h2>
+            <p className="text-xs text-slate-700">
               Enter your official credentials to view tuition, medical clearance status, and submit support tickets.
             </p>
           </div>
 
           <form onSubmit={handleLoginSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                Matricule
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                Student ID
               </label>
               <input
                 type="text"
-                placeholder="e.g. UB20S1234"
+                placeholder="e.g. EP2026-1234"
                 value={matricule}
                 onChange={(e) => setMatricule(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-800 focus:ring-1 focus:ring-blue-800"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-xs bg-white text-slate-900 focus:outline-none focus:border-blue-800 focus:ring-1 focus:ring-blue-800"
                 required
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
                 Password
               </label>
               <input
@@ -126,14 +119,14 @@ export default function StudentTicketsPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-800 focus:ring-1 focus:ring-blue-800"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-xs bg-white text-slate-900 focus:outline-none focus:border-blue-800 focus:ring-1 focus:ring-blue-800"
                 required
               />
             </div>
 
             {loginError && (
-              <div className="bg-red-50 text-red-700 text-xs p-3.5 rounded-xl border border-red-100 flex items-start space-x-2">
-                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div className="bg-red-50 text-red-800 text-xs p-3.5 rounded-xl border border-red-150 flex items-start space-x-2">
+                <AlertCircleIcon className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>{loginError}</span>
               </div>
             )}
@@ -141,11 +134,11 @@ export default function StudentTicketsPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue-800 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 active:scale-95 disabled:opacity-50"
+              className="w-full bg-blue-800 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold transition flex items-center justify-center space-x-2 active:scale-95 disabled:opacity-50 cursor-pointer text-xs"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></span>
                   <span>Logging in...</span>
                 </>
               ) : (
@@ -154,10 +147,10 @@ export default function StudentTicketsPage() {
             </button>
           </form>
 
-          <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-1.5 text-xs text-gray-500">
-            <span className="font-bold text-gray-800 block">Simulated Demo Account:</span>
-            <p>Matricule: <code className="font-mono bg-white px-1 py-0.5 border border-gray-200 rounded text-blue-800">UB20S1234</code></p>
-            <p>Password: <code className="font-mono bg-white px-1 py-0.5 border border-gray-200 rounded text-blue-800">password</code></p>
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-1.5 text-xs text-slate-700">
+            <span className="font-extrabold text-slate-800 block">Simulated Demo Account:</span>
+            <p>Student ID: <code className="font-mono bg-slate-50 px-1 py-0.5 border border-slate-200 rounded text-blue-800 font-bold">EP2026-1234</code></p>
+            <p>Password: <code className="font-mono bg-slate-50 px-1 py-0.5 border border-slate-200 rounded text-blue-800 font-bold">password</code></p>
           </div>
         </div>
       </div>
@@ -166,18 +159,18 @@ export default function StudentTicketsPage() {
 
   // Render Logged In portal
   return (
-    <div className="space-y-8 font-sans">
+    <div className="space-y-8 font-sans bg-white text-slate-905">
       {/* Header Profile Dashboard */}
-      <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center space-x-4">
           <div className="w-14 h-14 bg-blue-800 text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-md shadow-blue-800/10">
             {loggedInStudent.name.charAt(0)}
           </div>
           <div>
-            <h1 className="text-xl md:text-2xl font-black text-gray-900 leading-none">
+            <h1 className="text-xl md:text-2xl font-black text-slate-900 leading-none">
               {loggedInStudent.name}
             </h1>
-            <p className="text-xs text-gray-500 font-medium mt-1">
+            <p className="text-xs text-slate-700 font-bold mt-1">
               {loggedInStudent.dept} &bull; Level {loggedInStudent.level}
             </p>
           </div>
@@ -186,46 +179,46 @@ export default function StudentTicketsPage() {
         {/* Mini Student Admin clearances */}
         <div className="flex items-center gap-3">
           {/* Tuition clear card */}
-          <div className="flex-1 md:flex-initial bg-gray-50 border border-gray-100 rounded-2xl p-3 flex items-center space-x-3 pr-6">
+          <div className="flex-1 md:flex-initial bg-white border border-slate-200 rounded-2xl p-3 flex items-center space-x-3 pr-6">
             <div
               className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
                 loggedInStudent.tuitionStatus === 'Paid'
-                  ? 'bg-green-50 text-green-700'
-                  : 'bg-amber-50 text-amber-700'
+                  ? 'bg-green-50 text-green-800 border border-green-100'
+                  : 'bg-amber-50 text-amber-800 border border-amber-100'
               }`}
             >
               {loggedInStudent.tuitionStatus === 'Paid' ? (
-                <CheckCircle className="w-5 h-5" />
+                <CheckCircleIcon className="w-4 h-4" />
               ) : (
-                <AlertTriangle className="w-5 h-5" />
+                <AlertTriangleIcon className="w-4 h-4" />
               )}
             </div>
             <div>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Tuition</p>
-              <p className="text-xs font-black text-gray-900">
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Tuition</p>
+              <p className="text-xs font-black text-slate-900">
                 {loggedInStudent.tuitionStatus === 'Paid' ? 'Paid' : 'Overdue'}
               </p>
             </div>
           </div>
 
           {/* Medical clear card */}
-          <div className="flex-1 md:flex-initial bg-gray-50 border border-gray-100 rounded-2xl p-3 flex items-center space-x-3 pr-6">
+          <div className="flex-1 md:flex-initial bg-white border border-slate-200 rounded-2xl p-3 flex items-center space-x-3 pr-6">
             <div
               className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
                 loggedInStudent.medicalStatus === 'Cleared'
-                  ? 'bg-green-50 text-green-700'
-                  : 'bg-yellow-50 text-yellow-700 font-bold'
+                  ? 'bg-green-50 text-green-800 border border-green-100'
+                  : 'bg-amber-50 text-amber-800 border border-amber-100'
               }`}
             >
               {loggedInStudent.medicalStatus === 'Cleared' ? (
-                <CheckCircle className="w-5 h-5" />
+                <CheckCircleIcon className="w-4 h-4" />
               ) : (
-                <Clock className="w-5 h-5" />
+                <ClockIcon className="w-4 h-4" />
               )}
             </div>
             <div>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Medical</p>
-              <p className="text-xs font-black text-gray-900">
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Medical</p>
+              <p className="text-xs font-black text-slate-900">
                 {loggedInStudent.medicalStatus === 'Cleared' ? 'Cleared' : 'Pending'}
               </p>
             </div>
@@ -239,24 +232,24 @@ export default function StudentTicketsPage() {
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <h2 className="text-xl font-extrabold text-gray-900">Support Ticket Queue</h2>
-              <p className="text-xs text-gray-500">Submit claims regarding finance, grades, or administrative clearance.</p>
+              <h2 className="text-xl font-extrabold text-slate-900">Support Ticket Queue</h2>
+              <p className="text-xs text-slate-700">Submit requests regarding registry, courses, or clearances.</p>
             </div>
             <button
               onClick={() => setIsNewTicketOpen(true)}
-              className="bg-blue-800 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 active:scale-95 shadow-md shadow-blue-800/10"
+              className="bg-blue-800 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 active:scale-95 shadow-md shadow-blue-800/10 cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
+              <PlusIcon className="w-4 h-4" />
               <span>New Ticket</span>
             </button>
           </div>
 
           {studentTickets.length > 0 ? (
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                    <tr className="bg-white border-b border-slate-200 text-[10px] font-bold text-slate-700 uppercase tracking-wider">
                       <th className="p-4 pl-6">Ticket ID</th>
                       <th className="p-4">Subject</th>
                       <th className="p-4">Status</th>
@@ -264,37 +257,37 @@ export default function StudentTicketsPage() {
                       <th className="p-4 pr-6 text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50 text-xs">
+                  <tbody className="divide-y divide-slate-100 text-xs text-slate-900">
                     {studentTickets.map((ticket) => (
                       <tr
                         key={ticket.id}
-                        onClick={() => handleSelectTicket(ticket)}
+                        onClick={() => setActiveTicket(ticket)}
                         className={`hover:bg-blue-50/20 transition cursor-pointer ${
-                          activeTicket?.id === ticket.id ? 'bg-blue-50/50' : ''
+                          activeTicket?.id === ticket.id ? 'bg-blue-50/30' : ''
                         }`}
                       >
-                        <td className="p-4 pl-6 font-mono font-bold text-gray-600">
+                        <td className="p-4 pl-6 font-mono font-bold text-slate-800">
                           {ticket.id}
                         </td>
-                        <td className="p-4 font-bold text-gray-900 truncate max-w-[200px]">
+                        <td className="p-4 font-bold text-slate-900 truncate max-w-[200px]">
                           {ticket.subject}
                         </td>
                         <td className="p-4">
                           {ticket.status === 'open' ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"></span>
                               Open
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-50 text-green-700 border border-green-100">
-                              <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-50 text-green-800 border border-green-205">
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-550 mr-1.5"></span>
                               Closed
                             </span>
                           )}
                         </td>
-                        <td className="p-4 text-gray-500">{ticket.date}</td>
+                        <td className="p-4 text-slate-700 font-medium">{ticket.date}</td>
                         <td className="p-4 pr-6 text-right font-bold text-blue-800 hover:underline">
-                          View details
+                          View Details
                         </td>
                       </tr>
                     ))}
@@ -303,13 +296,13 @@ export default function StudentTicketsPage() {
               </div>
             </div>
           ) : (
-            <div className="bg-white border border-gray-100 rounded-3xl p-12 text-center space-y-3 shadow-sm max-w-md mx-auto">
-              <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto text-gray-400">
-                <MessageSquare className="w-5 h-5" />
+            <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center space-y-3 shadow-sm max-w-md mx-auto">
+              <div className="w-12 h-12 bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center mx-auto text-slate-500">
+                <MessageSquareIcon className="w-5 h-5" />
               </div>
-              <h3 className="text-sm font-bold text-gray-900">No support tickets</h3>
-              <p className="text-xs text-gray-500">
-                You haven't opened any support tickets yet. Click the button above to start a claim.
+              <h3 className="text-sm font-bold text-slate-900">No support tickets</h3>
+              <p className="text-xs text-slate-700">
+                You haven't opened any support tickets yet. Click the button above to submit a claim.
               </p>
             </div>
           )}
@@ -318,27 +311,27 @@ export default function StudentTicketsPage() {
         {/* Right 1 Col: Ticket details chat thread */}
         <div className="lg:col-span-1">
           {activeTicket ? (
-            <div className="bg-white border border-gray-100 rounded-3xl shadow-sm overflow-hidden flex flex-col h-[480px]">
+            <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col h-[480px]">
               {/* Active Ticket Header */}
-              <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+              <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] font-mono text-gray-500 font-bold uppercase">
+                  <span className="text-[10px] font-mono text-slate-700 font-bold uppercase">
                     {activeTicket.id}
                   </span>
-                  <h3 className="text-sm font-extrabold text-gray-900 truncate max-w-[180px]">
+                  <h3 className="text-sm font-extrabold text-slate-900 truncate max-w-[180px]">
                     {activeTicket.subject}
                   </h3>
                 </div>
                 <button
                   onClick={() => setActiveTicket(null)}
-                  className="text-gray-400 hover:text-gray-600 transition"
+                  className="text-slate-700 hover:text-slate-950 transition cursor-pointer"
                 >
-                  <X className="w-4 h-4" />
+                  <XIcon className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Chat messages */}
-              <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50/20 text-xs">
+              <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-white text-xs">
                 {activeTicket.messages.map((msg, i) => (
                   <div
                     key={i}
@@ -348,13 +341,13 @@ export default function StudentTicketsPage() {
                   >
                     <div
                       className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        msg.sender === 'student' ? 'bg-blue-800 text-white' : 'bg-gray-200 text-gray-700'
+                        msg.sender === 'student' ? 'bg-blue-800 text-white' : 'bg-slate-100 text-slate-800 border border-slate-200'
                       }`}
                     >
                       {msg.sender === 'student' ? (
-                        <User className="w-3.5 h-3.5" />
+                        <UserIcon className="w-4 h-4" />
                       ) : (
-                        <GraduationCap className="w-3.5 h-3.5" />
+                        <GraduationCapIcon className="w-4 h-4" />
                       )}
                     </div>
                     <div className="max-w-[80%]">
@@ -362,12 +355,12 @@ export default function StudentTicketsPage() {
                         className={`p-2.5 rounded-2xl ${
                           msg.sender === 'student'
                             ? 'bg-blue-800 text-white rounded-tr-none'
-                            : 'bg-white border border-gray-100 text-gray-800 rounded-tl-none shadow-sm'
+                            : 'bg-white border border-slate-200 text-slate-900 rounded-tl-none shadow-sm'
                         }`}
                       >
                         {msg.text}
                       </div>
-                      <span className="text-[9px] text-gray-400 mt-1 block px-1 text-right">
+                      <span className="text-[9px] text-slate-700 mt-1 block px-1 text-right font-medium">
                         {msg.date}
                       </span>
                     </div>
@@ -379,34 +372,35 @@ export default function StudentTicketsPage() {
               {activeTicket.status === 'open' ? (
                 <form
                   onSubmit={handleSendReplySubmit}
-                  className="p-3 border-t border-gray-100 flex items-center space-x-2 bg-white"
+                  className="p-3 border-t border-slate-200 flex items-center space-x-2 bg-white"
                 >
                   <input
                     type="text"
-                    placeholder="Type your message..."
+                    placeholder="Type your reply message..."
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-blue-800"
+                    className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-900 focus:outline-none focus:border-blue-800"
                     required
                   />
                   <button
                     type="submit"
                     disabled={!replyText.trim()}
-                    className="bg-blue-800 text-white p-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
+                    className="bg-blue-800 text-white p-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 cursor-pointer"
                   >
-                    <Send className="w-4 h-4" />
+                    <SendIcon className="w-4 h-4" />
                   </button>
                 </form>
               ) : (
-                <div className="p-4 bg-gray-50 border-t border-gray-100 text-center text-xs text-gray-500 font-bold">
-                  This ticket has been marked resolved/closed.
+                <div className="p-4 bg-white border-t border-slate-200 text-center text-xs text-slate-700 font-bold">
+                  This support ticket has been marked resolved.
                 </div>
               )}
             </div>
           ) : (
-            <div className="bg-gray-50/50 border border-dashed border-gray-200 rounded-3xl p-8 text-center text-xs text-gray-400 h-[480px] flex flex-col justify-center items-center space-y-2">
-              <MessageSquare className="w-8 h-8 text-gray-300" />
-              <span>Select a support ticket to view messages and write responses.</span>
+            <div className="bg-white border border-dashed border-slate-200 rounded-3xl p-8 text-center text-xs text-slate-700 h-[480px] flex flex-col justify-center items-center space-y-2">
+              <MessageSquareIcon className="w-8 h-8 text-slate-400" />
+              <span className="font-bold">Select a Support Ticket</span>
+              <span>Click a ticket from the queue list to review communications history.</span>
             </div>
           )}
         </div>
@@ -414,44 +408,44 @@ export default function StudentTicketsPage() {
 
       {/* Create Ticket Modal */}
       {isNewTicketOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white border border-gray-100 rounded-3xl w-full max-w-md shadow-2xl p-6 relative animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-250 rounded-3xl w-full max-w-md shadow-2xl p-6 relative animate-in zoom-in-95 duration-200">
             <button
               onClick={() => setIsNewTicketOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
+              className="absolute top-4 right-4 text-slate-700 hover:text-slate-950 transition cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <XIcon className="w-5 h-5" />
             </button>
 
-            <h3 className="text-lg font-extrabold text-gray-900 mb-2">Create Support Ticket</h3>
-            <p className="text-xs text-gray-500 mb-6">
-              Detail your administrative or financial issue. A registrar or technician will attend to it.
+            <h3 className="text-lg font-extrabold text-slate-900 mb-2">Create Support Ticket</h3>
+            <p className="text-xs text-slate-700 mb-6">
+              Detail your administrative or financial issue. An administrator will attend to it.
             </p>
 
             <form onSubmit={handleCreateTicketSubmit} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
                   Subject / Topic
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Tuition fee receipt verification claim"
+                  placeholder="e.g. Tuition fee verification claim"
                   value={ticketSubject}
                   onChange={(e) => setTicketSubject(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-blue-800"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-900 focus:outline-none focus:border-blue-800"
                   required
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
                   Detailed Description
                 </label>
                 <textarea
                   placeholder="Provide transaction IDs, error codes, dates, and course codes where applicable..."
                   value={ticketDesc}
                   onChange={(e) => setTicketDesc(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-blue-800 h-28 resize-none"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-900 focus:outline-none focus:border-blue-800 h-28 resize-none"
                   required
                 />
               </div>
@@ -460,13 +454,13 @@ export default function StudentTicketsPage() {
                 <button
                   type="button"
                   onClick={() => setIsNewTicketOpen(false)}
-                  className="px-4 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl font-bold border border-gray-200"
+                  className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 rounded-xl font-bold border border-slate-200 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-blue-800 hover:bg-blue-700 text-white rounded-xl font-bold transition shadow-md shadow-blue-800/10 active:scale-95"
+                  className="px-5 py-2.5 bg-blue-800 hover:bg-blue-700 text-white rounded-xl font-bold transition shadow-md shadow-blue-800/10 active:scale-95 cursor-pointer"
                 >
                   Submit Ticket
                 </button>
