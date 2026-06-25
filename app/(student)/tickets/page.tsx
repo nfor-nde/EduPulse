@@ -27,6 +27,7 @@ export default function StudentTicketsPage() {
     logout,
     createTicket,
     replyToTicket,
+    refreshTickets,
     isLoading,
     sessionLoading
   } = useApp();
@@ -44,6 +45,7 @@ export default function StudentTicketsPage() {
   // Active Chat ticket detail state
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [sseConnected, setSseConnected] = useState(false);
 
   const studentTickets = loggedInStudent
     ? tickets.filter((t) => t.studentMatricule === loggedInStudent.matricule)
@@ -56,6 +58,51 @@ export default function StudentTicketsPage() {
       if (updated) setActiveTicket(updated);
     }
   }, [tickets, activeTicket?.id]);
+
+  // ── Real-time SSE subscription ──
+  useEffect(() => {
+    if (!loggedInStudent) return; // only subscribe when logged in
+
+    const es = new EventSource('/api/tickets/stream');
+
+    es.addEventListener('connected', () => {
+      setSseConnected(true);
+    });
+
+    es.addEventListener('ticket_updated', (e: MessageEvent) => {
+      try {
+        const payload = JSON.parse(e.data) as {
+          ticketId: string;
+          type: 'reply' | 'status';
+          ticket: Ticket;
+        };
+
+        // Update the tickets list in AppContext state via direct state reconciliation
+        // (we update local display state here; AppContext will re-fetch on next action)
+        setActiveTicket((current) => {
+          if (current && current.id === payload.ticketId) {
+            return payload.ticket;
+          }
+          return current;
+        });
+
+        // Also update the tickets list in context by triggering a refresh
+        refreshTickets(loggedInStudent.matricule);
+      } catch {
+        // Malformed event — ignore
+      }
+    });
+
+    es.onerror = () => {
+      setSseConnected(false);
+    };
+
+    return () => {
+      es.close();
+      setSseConnected(false);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loggedInStudent?.matricule]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -267,7 +314,14 @@ export default function StudentTicketsPage() {
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <h2 className="text-xl font-extrabold text-slate-900">Support Ticket Queue</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-extrabold text-slate-900">Support Ticket Queue</h2>
+                {/* Live SSE indicator */}
+                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${sseConnected ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${sseConnected ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`} />
+                  {sseConnected ? 'Live' : 'Connecting...'}
+                </div>
+              </div>
               <p className="text-xs text-slate-700">Submit requests regarding registry, courses, or clearances.</p>
             </div>
             <button

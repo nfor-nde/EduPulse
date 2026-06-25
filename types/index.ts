@@ -23,6 +23,16 @@ export interface Resource {
   level: number;
 }
 
+export interface StudentInteraction {
+  id: string;
+  studentId: string;
+  resourceId: string;
+  action: 'view' | 'click' | 'download' | 'complete' | 'search';
+  duration?: number | null;
+  metadata?: string | null;
+  createdAt: string;
+}
+
 export interface Message {
   sender: 'student' | 'admin';
   text: string;

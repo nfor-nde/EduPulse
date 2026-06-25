@@ -1,384 +1,382 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import {
   SearchIcon,
   FilterIcon,
   VideoIcon,
   FileTextIcon,
-  XIcon
 } from '@/components/icons';
 import { Resource } from '@/types';
+import { useApp } from '@/context/AppContext';
+
+// Lazy-load the heavy viewer components
+const PdfViewer = lazy(() => import('@/components/PdfViewer'));
+const YoutubeViewer = lazy(() => import('@/components/YoutubeViewer'));
+
+/** Fire-and-forget interaction tracker */
+async function trackInteraction(
+  resourceId: string,
+  action: 'view' | 'click' | 'download' | 'complete' | 'search',
+  extra?: { duration?: number; metadata?: Record<string, string> }
+) {
+  try {
+    await fetch('/api/interactions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resourceId, action, ...extra }),
+    });
+  } catch {
+    // Silently ignore — tracking should never break the UI
+  }
+}
 
 export default function StudentResourcesPage() {
+  const { loggedInStudent } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFaculty, setSelectedFaculty] = useState('');
   const [selectedDept, setSelectedDept] = useState('');
   const [selectedLevel, setSelectedLevel] = useState('');
+  const [selectedType, setSelectedType] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [allResources, setAllResources] = useState<Resource[]>([]);
   const [filteredResources, setFilteredResources] = useState<Resource[]>([]);
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 24;
 
-  // Resource Viewer state
+  // Viewer state
   const [viewingResource, setViewingResource] = useState<Resource | null>(null);
+  const viewStartRef = useRef<number | null>(null);
 
-  // Derive unique filter options from all resources
-  const faculties = Array.from(new Set(allResources.map((r) => r.faculty)));
+  // Derive unique filter options
+  const faculties = Array.from(new Set(allResources.map((r) => r.faculty))).sort();
   const departments = Array.from(
     new Set(
       allResources
         .filter((r) => !selectedFaculty || r.faculty === selectedFaculty)
         .map((r) => r.dept)
     )
-  );
+  ).sort();
 
-  // Fetch all resources once on mount
-  useEffect(() => {
-    const fetchResources = async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch('/api/resources');
-        if (!res.ok) throw new Error('Failed to fetch resources');
-        const data: Resource[] = await res.json();
-        setAllResources(data);
-        setFilteredResources(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchResources();
+  // Fetch resources on mount
+  const fetchResources = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/resources');
+      if (!res.ok) throw new Error('Failed');
+      const data: Resource[] = await res.json();
+      setAllResources(data);
+      setFilteredResources(data);
+    } catch {
+      console.error('Failed to fetch resources');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
+  useEffect(() => { fetchResources(); }, [fetchResources]);
+
   // Client-side filtering
-  const applyFilters = useCallback(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      const results = allResources.filter((resource) => {
-        const matchesSearch =
-          !searchTerm ||
-          resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          resource.description.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesFaculty = !selectedFaculty || resource.faculty === selectedFaculty;
-        const matchesDept = !selectedDept || resource.dept === selectedDept;
-        const matchesLevel = !selectedLevel || resource.level.toString() === selectedLevel;
-        return matchesSearch && matchesFaculty && matchesDept && matchesLevel;
-      });
-      setFilteredResources(results);
-      setIsLoading(false);
-    }, 350);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm, selectedFaculty, selectedDept, selectedLevel, allResources]);
-
   useEffect(() => {
-    const cleanup = applyFilters();
-    return cleanup;
-  }, [applyFilters]);
+    let result = allResources;
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase();
+      result = result.filter(
+        (r) =>
+          r.title.toLowerCase().includes(q) ||
+          r.description.toLowerCase().includes(q) ||
+          r.dept.toLowerCase().includes(q)
+      );
+    }
+    if (selectedFaculty) result = result.filter((r) => r.faculty === selectedFaculty);
+    if (selectedDept) result = result.filter((r) => r.dept === selectedDept);
+    if (selectedLevel) result = result.filter((r) => String(r.level) === selectedLevel);
+    if (selectedType) result = result.filter((r) => r.type === selectedType);
+    setFilteredResources(result);
+    setPage(1);
+  }, [searchTerm, selectedFaculty, selectedDept, selectedLevel, selectedType, allResources]);
 
-  const resetFilters = () => {
-    setSearchTerm('');
-    setSelectedFaculty('');
-    setSelectedDept('');
-    setSelectedLevel('');
-  };
-
-  const getResourceTypeBadge = (type: string) => {
-    switch (type) {
-      case 'pastpaper':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-            Past Paper
-          </span>
-        );
-      case 'notes':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-900 border border-blue-200">
-            Course Notes
-          </span>
-        );
-      case 'youtube':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-900 border border-red-200">
-            YouTube Video
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-50 text-slate-800 border border-slate-200">
-            Reference
-          </span>
-        );
+  // Track search interactions (debounced 800ms)
+  const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearchChange = (val: string) => {
+    setSearchTerm(val);
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    if (val.trim().length >= 3) {
+      searchDebounce.current = setTimeout(() => {
+        // Track search on first matching resource (or skip if none)
+        if (filteredResources.length > 0) {
+          trackInteraction(filteredResources[0].id, 'search', {
+            metadata: { query: val.trim() },
+          });
+        }
+      }, 800);
     }
   };
 
-  // Determine if this resource URL is an external (real) PDF
-  const isExternalPdf = (url: string) =>
-    url.startsWith('https://') && !url.startsWith('https://www.youtube.com');
+  // Open viewer and start tracking
+  const openViewer = (resource: Resource) => {
+    setViewingResource(resource);
+    viewStartRef.current = Date.now();
+    trackInteraction(resource.id, 'view');
+  };
+
+  // Close viewer and record view duration
+  const closeViewer = () => {
+    if (viewingResource && viewStartRef.current !== null) {
+      const duration = Math.round((Date.now() - viewStartRef.current) / 1000);
+      if (duration > 2) {
+        // Only record if they spent more than 2 seconds
+        trackInteraction(viewingResource.id, 'complete', { duration });
+      }
+      viewStartRef.current = null;
+    }
+    setViewingResource(null);
+  };
+
+  const isExternalPdf = (r: Resource) =>
+    (r.type === 'notes' || r.type === 'pastpaper') && r.url.startsWith('https://');
+
+  const getBadge = (type: string) => {
+    if (type === 'youtube')
+      return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-800 border border-red-100"><VideoIcon className="w-3 h-3"/>Video</span>;
+    if (type === 'pastpaper')
+      return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-100"><FileTextIcon className="w-3 h-3"/>Past Paper</span>;
+    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-100"><FileTextIcon className="w-3 h-3"/>Notes</span>;
+  };
+
+  // Pagination
+  const totalPages = Math.ceil(filteredResources.length / PER_PAGE);
+  const paginatedResources = filteredResources.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  const clearFilters = () => {
+    setSearchTerm(''); setSelectedFaculty(''); setSelectedDept('');
+    setSelectedLevel(''); setSelectedType('');
+  };
+  const hasFilters = searchTerm || selectedFaculty || selectedDept || selectedLevel || selectedType;
 
   return (
-    <div className="space-y-8 font-sans bg-white text-slate-900">
-      {/* Title Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
-          Academic Resources Library
-        </h1>
-        <p className="text-xs font-bold text-slate-700 max-w-2xl">
-          Search, filter, and view course notes, official past papers, and instructional videos directly in your browser.
-        </p>
-      </div>
-
-      {/* Filter / Search panel */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-        {/* Search Input */}
-        <div className="relative">
-          <SearchIcon className="absolute left-4 top-3.5 text-slate-500 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Search resources by title, course code or description..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl text-xs bg-white text-slate-900 focus:outline-none focus:border-blue-800"
-          />
-        </div>
-
-        {/* Dropdown Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          {/* Faculty Filter */}
-          <div className="flex flex-col space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Faculty</label>
-            <select
-              value={selectedFaculty}
-              onChange={(e) => {
-                setSelectedFaculty(e.target.value);
-                setSelectedDept('');
-              }}
-              className="px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-900 focus:outline-none focus:border-blue-800"
-            >
-              <option value="">All Faculties</option>
-              {faculties.map((fac, i) => (
-                <option key={i} value={fac}>{fac}</option>
-              ))}
-            </select>
+    <>
+      {/* ── Fullscreen Viewers (rendered outside normal flow, over everything) ── */}
+      {viewingResource && (
+        <Suspense fallback={
+          <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+            <div className="w-12 h-12 border-4 border-white/20 border-t-blue-500 rounded-full animate-spin" />
           </div>
-
-          {/* Department Filter */}
-          <div className="flex flex-col space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Department</label>
-            <select
-              value={selectedDept}
-              onChange={(e) => setSelectedDept(e.target.value)}
-              className="px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-900 focus:outline-none focus:border-blue-800"
-            >
-              <option value="">All Departments</option>
-              {departments.map((dept, i) => (
-                <option key={i} value={dept}>{dept}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Level Filter */}
-          <div className="flex flex-col space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Level</label>
-            <select
-              value={selectedLevel}
-              onChange={(e) => setSelectedLevel(e.target.value)}
-              className="px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs bg-white text-slate-900 focus:outline-none focus:border-blue-800"
-            >
-              <option value="">All Levels</option>
-              <option value="100">Level 100</option>
-              <option value="200">Level 200</option>
-              <option value="300">Level 300</option>
-              <option value="400">Level 400</option>
-            </select>
-          </div>
-
-          {/* Clear Filters CTA */}
-          <div className="flex items-end">
-            <button
-              onClick={resetFilters}
-              className="w-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 cursor-pointer"
-            >
-              <FilterIcon className="w-3.5 h-3.5" />
-              <span>Reset Filters</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Resource Grid / Skeletons */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <div
-              key={i}
-              className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 animate-pulse"
-            >
-              <div className="flex justify-between items-center">
-                <div className="h-4 bg-slate-200 rounded-full w-20"></div>
-                <div className="h-4 bg-slate-200 rounded-full w-12"></div>
+        }>
+          {viewingResource.type === 'youtube' ? (
+            <YoutubeViewer
+              url={viewingResource.url}
+              title={viewingResource.title}
+              onClose={closeViewer}
+            />
+          ) : isExternalPdf(viewingResource) ? (
+            <PdfViewer
+              url={viewingResource.url}
+              title={viewingResource.title}
+              onClose={closeViewer}
+            />
+          ) : (
+            // Fallback for non-external resources
+            <div className="fixed inset-0 z-50 bg-[#1a1a2e] flex flex-col">
+              <div className="flex items-center justify-between px-5 py-3 bg-[#16213e] border-b border-white/10">
+                <span className="text-white font-bold text-sm truncate">{viewingResource.title}</span>
+                <button onClick={closeViewer} className="w-8 h-8 rounded-lg bg-white/10 hover:bg-red-600 text-white flex items-center justify-center transition cursor-pointer">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
               </div>
-              <div className="space-y-2">
-                <div className="h-5 bg-slate-200 rounded w-3/4"></div>
-                <div className="h-4 bg-slate-200 rounded w-full"></div>
-              </div>
-              <div className="pt-2 flex justify-between items-center border-t border-slate-200">
-                <div className="h-3 bg-slate-200 rounded w-24"></div>
-                <div className="h-8 bg-slate-200 rounded-xl w-24"></div>
+              <div className="flex-1 overflow-y-auto p-8">
+                <div className="max-w-2xl mx-auto bg-white rounded-2xl p-8 space-y-4">
+                  <h2 className="text-xl font-black text-slate-900">{viewingResource.title}</h2>
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-slate-700">{viewingResource.description}</div>
+                  <p className="text-xs text-slate-500">{viewingResource.dept} · Level {viewingResource.level}</p>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-      ) : filteredResources.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredResources.map((resource) => (
-            <div
-              key={resource.id}
-              className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-blue-300 hover:scale-[1.01] transition duration-300 group"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  {getResourceTypeBadge(resource.type)}
-                  <span className="text-[10px] text-slate-700 font-bold uppercase tracking-wider bg-white border border-slate-200 px-2 py-0.5 rounded-full">
-                    Level {resource.level}
-                  </span>
-                </div>
-                <h3 className="text-sm font-black text-slate-900 leading-tight group-hover:text-blue-800 transition">
-                  {resource.title}
-                </h3>
-                <p className="text-xs text-slate-700 leading-relaxed line-clamp-3">
-                  {resource.description}
-                </p>
-              </div>
+          )}
+        </Suspense>
+      )}
 
-              <div className="mt-6 pt-4 border-t border-slate-200 flex items-center justify-between">
-                <div className="text-[10px] text-slate-700 font-bold">
-                  <p className="truncate max-w-[130px]">{resource.dept}</p>
-                  <p className="text-slate-500 font-medium truncate max-w-[130px]">{resource.faculty}</p>
+      {/* ── Main Page Content ── */}
+      <div className="space-y-8 font-sans bg-white text-slate-900">
+        {/* Header */}
+        <div className="space-y-2">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
+            Resource Library
+          </h1>
+          <p className="text-sm font-bold text-slate-700 max-w-xl">
+            {isLoading
+              ? 'Loading resources...'
+              : `${allResources.length.toLocaleString()} resources across all faculties and departments`}
+            {loggedInStudent && (
+              <span className="ml-2 text-blue-800">· Personalised for {loggedInStudent.dept}</span>
+            )}
+          </p>
+        </div>
+
+        {/* Search + Filter Panel */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
+          {/* Search bar */}
+          <div className="relative">
+            <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by title, department, or topic..."
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-xs font-bold bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-800 focus:ring-1 focus:ring-blue-800 transition"
+            />
+          </div>
+
+          {/* Filters */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Faculty</label>
+              <select
+                value={selectedFaculty}
+                onChange={(e) => { setSelectedFaculty(e.target.value); setSelectedDept(''); }}
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs font-bold bg-white text-slate-900 focus:outline-none focus:border-blue-800 cursor-pointer"
+              >
+                <option value="">All Faculties</option>
+                {faculties.map((f) => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Department</label>
+              <select
+                value={selectedDept}
+                onChange={(e) => setSelectedDept(e.target.value)}
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs font-bold bg-white text-slate-900 focus:outline-none focus:border-blue-800 cursor-pointer"
+              >
+                <option value="">All Departments</option>
+                {departments.map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Level</label>
+              <select
+                value={selectedLevel}
+                onChange={(e) => setSelectedLevel(e.target.value)}
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs font-bold bg-white text-slate-900 focus:outline-none focus:border-blue-800 cursor-pointer"
+              >
+                <option value="">All Levels</option>
+                {[100,200,300,400,500].map((l) => <option key={l} value={String(l)}>Level {l}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">Type</label>
+              <select
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs font-bold bg-white text-slate-900 focus:outline-none focus:border-blue-800 cursor-pointer"
+              >
+                <option value="">All Types</option>
+                <option value="notes">Notes</option>
+                <option value="pastpaper">Past Papers</option>
+                <option value="youtube">Videos</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Results summary + clear */}
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-slate-700">
+              {isLoading ? '...' : `${filteredResources.length.toLocaleString()} results`}
+              {hasFilters && <span className="text-slate-400"> (filtered)</span>}
+            </p>
+            {hasFilters && (
+              <button
+                onClick={clearFilters}
+                className="text-xs font-bold text-blue-800 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <FilterIcon className="w-3 h-3" /> Clear Filters
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Resource Grid */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="bg-white border border-slate-100 rounded-2xl p-5 space-y-3 animate-pulse shadow-sm">
+                <div className="h-4 bg-slate-100 rounded w-1/3" />
+                <div className="h-5 bg-slate-100 rounded" />
+                <div className="h-4 bg-slate-100 rounded w-3/4" />
+                <div className="h-9 bg-slate-100 rounded-xl mt-2" />
+              </div>
+            ))}
+          </div>
+        ) : paginatedResources.length === 0 ? (
+          <div className="text-center py-20 space-y-3">
+            <SearchIcon className="w-12 h-12 text-slate-200 mx-auto" />
+            <p className="text-slate-900 font-extrabold text-lg">No resources found</p>
+            <p className="text-xs font-bold text-slate-700">Try adjusting your search or filters.</p>
+            <button onClick={clearFilters} className="mt-2 text-xs font-bold text-blue-800 hover:underline cursor-pointer">Clear all filters</button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {paginatedResources.map((resource) => (
+              <div
+                key={resource.id}
+                className="group bg-white border border-slate-200 rounded-2xl p-5 flex flex-col space-y-3 shadow-sm hover:shadow-md hover:border-blue-300 transition duration-300"
+              >
+                <div className="flex items-center justify-between">
+                  {getBadge(resource.type)}
+                  <span className="text-[10px] font-bold text-slate-400">Lvl {resource.level}</span>
                 </div>
+
+                <div className="flex-1 space-y-1">
+                  <h3 className="text-sm font-extrabold text-slate-900 leading-snug line-clamp-2 group-hover:text-blue-800 transition">
+                    {resource.title}
+                  </h3>
+                  <p className="text-[11px] font-bold text-slate-500 truncate">{resource.dept}</p>
+                </div>
+
+                <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-2">{resource.description}</p>
+
                 <button
                   onClick={() => {
-                    setViewingResource(resource);
+                    trackInteraction(resource.id, 'click');
+                    openViewer(resource);
                   }}
-                  className="inline-flex items-center space-x-1.5 bg-blue-800 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-sm hover:scale-102 active:scale-98 cursor-pointer"
+                  className="w-full mt-auto inline-flex items-center justify-center space-x-2 bg-blue-800 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition active:scale-[0.97] cursor-pointer"
                 >
-                  <span>{resource.type === 'youtube' ? 'Watch Video' : 'View File'}</span>
-                  {resource.type === 'youtube' ? <VideoIcon className="w-3.5 h-3.5" /> : <FileTextIcon className="w-3.5 h-3.5" />}
+                  {resource.type === 'youtube' ? (
+                    <><VideoIcon className="w-3.5 h-3.5" /><span>Watch Video</span></>
+                  ) : (
+                    <><FileTextIcon className="w-3.5 h-3.5" /><span>Open Document</span></>
+                  )}
                 </button>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-16 bg-white border border-slate-200 rounded-3xl p-8 space-y-3 max-w-md mx-auto shadow-sm">
-          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto border border-slate-200">
-            <FilterIcon className="w-5 h-5 text-slate-500" />
+            ))}
           </div>
-          <h3 className="text-sm font-bold text-slate-900">No resources found</h3>
-          <p className="text-xs text-slate-700">
-            We couldn&apos;t find any resources matching your search queries. Try adjusting your filter parameters.
-          </p>
-          <button
-            onClick={resetFilters}
-            className="text-xs font-bold text-blue-800 hover:underline pt-2 cursor-pointer"
-          >
-            Clear all filters
-          </button>
-        </div>
-      )}
+        )}
 
-      {/* Embedded Document / Video Viewer Modal */}
-      {viewingResource && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-4xl shadow-2xl flex flex-col h-[85vh] relative animate-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                {viewingResource.type === 'youtube' ? (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-900 border border-red-200">
-                    Video Player
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-900 border border-blue-200">
-                    Document Reader
-                  </span>
-                )}
-                <span className="text-xs font-bold text-slate-900 truncate max-w-[280px] md:max-w-md">
-                  {viewingResource.title}
-                </span>
-              </div>
-              <div className="flex items-center space-x-3">
-                {viewingResource.type !== 'youtube' && isExternalPdf(viewingResource.url) && (
-                  <div className="flex items-center space-x-2 border-r border-slate-200 pr-3">
-                    <a
-                      href={viewingResource.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[10px] font-bold text-blue-800 hover:underline px-2 py-1 border border-blue-200 bg-blue-50 rounded-lg transition cursor-pointer"
-                    >
-                      Open in New Tab
-                    </a>
-                  </div>
-                )}
-                <button
-                  onClick={() => setViewingResource(null)}
-                  className="p-1.5 text-slate-700 hover:text-slate-950 hover:bg-slate-100 rounded-full transition cursor-pointer"
-                >
-                  <XIcon className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 bg-white overflow-hidden">
-              {viewingResource.type === 'youtube' ? (
-                <div className="relative pb-[56.25%] h-0 rounded-2xl overflow-hidden shadow-md border border-slate-200 bg-slate-950 mx-6 mt-6">
-                  <iframe
-                    className="absolute top-0 left-0 w-full h-full"
-                    src={viewingResource.url}
-                    title={viewingResource.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                  ></iframe>
-                </div>
-              ) : isExternalPdf(viewingResource.url) ? (
-                <iframe
-                  src={viewingResource.url}
-                  className="w-full h-full min-h-[60vh] border-0"
-                  title={viewingResource.title}
-                  loading="lazy"
-                />
-              ) : (
-                <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-inner min-h-[60vh] m-6 overflow-y-auto">
-                  <div className="space-y-6 text-slate-900 leading-relaxed max-w-2xl mx-auto select-text">
-                    <div className="border-b border-slate-200 pb-4 text-center">
-                      <span className="text-[10px] font-bold text-blue-800 tracking-wider uppercase">{viewingResource.faculty}</span>
-                      <h2 className="text-xl font-black text-slate-900 mt-1">{viewingResource.title}</h2>
-                      <p className="text-xs text-slate-700 mt-1">Level {viewingResource.level} &bull; {viewingResource.dept}</p>
-                    </div>
-                    <div className="bg-blue-50 p-4 border border-blue-200 rounded-xl text-xs">
-                      <span className="font-extrabold text-blue-900 block mb-1">Description:</span>
-                      {viewingResource.description}
-                    </div>
-                    <p className="text-xs text-slate-700">This document is available as a downloadable resource. Please consult the course coordinator for the physical copy or check the university intranet.</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-4 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-700 font-bold">
-              <span>{viewingResource.dept} &bull; Level {viewingResource.level}</span>
-              <button
-                onClick={() => setViewingResource(null)}
-                className="px-5 py-2 bg-blue-800 hover:bg-blue-700 text-white rounded-xl font-bold transition cursor-pointer"
-              >
-                Close Viewer
-              </button>
-            </div>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 pt-4">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition cursor-pointer"
+            >
+              Previous
+            </button>
+            <span className="text-xs font-bold text-slate-700">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition cursor-pointer"
+            >
+              Next
+            </button>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 }

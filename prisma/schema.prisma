@@ -8,30 +8,49 @@ generator client {
 }
 
 model Student {
-  id            String   @id @default(uuid())
+  id            String               @id @default(uuid())
   name          String
-  matricule     String   @unique
+  matricule     String               @unique
   instEmail     String
   personalEmail String
   phone         String
   faculty       String
   dept          String
   level         Int
-  tuitionStatus String   // "Paid" | "Overdue"
-  medicalStatus String   // "Cleared" | "Pending"
-  createdAt     DateTime @default(now())
+  tuitionStatus String               // "Paid" | "Overdue"
+  medicalStatus String               // "Cleared" | "Pending"
+  createdAt     DateTime             @default(now())
+  interactions  StudentInteraction[]
 }
 
 model Resource {
-  id          String   @id @default(uuid())
-  title       String
-  description String   @db.Text
-  type        String   // "pastpaper" | "notes" | "youtube"
-  url         String
-  faculty     String
-  dept        String
-  level       Int
-  createdAt   DateTime @default(now())
+  id           String               @id @default(uuid())
+  title        String
+  description  String               @db.Text
+  type         String               // "pastpaper" | "notes" | "youtube"
+  url          String
+  faculty      String
+  dept         String
+  level        Int
+  createdAt    DateTime             @default(now())
+  interactions StudentInteraction[]
+}
+
+model StudentInteraction {
+  id         String   @id @default(uuid())
+  studentId  String
+  resourceId String
+  action     String   // "view" | "click" | "download" | "complete" | "search"
+  duration   Int?     // seconds (for view events)
+  metadata   String?  @db.Text // JSON string with extra context (search terms, etc.)
+  createdAt  DateTime @default(now())
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([resourceId])
+  @@index([createdAt])
+  @@index([action])
 }
 
 model Ticket {

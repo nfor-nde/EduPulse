@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { broadcastSSE } from '@/lib/sse';
 
 // PATCH /api/tickets/[id] - Update ticket status or add a message reply
 export async function PATCH(
@@ -21,10 +22,17 @@ export async function PATCH(
 
       await prisma.activityFeed.create({
         data: {
-          action: `${status === 'closed' ? 'resolved' : 'reopened'} ticket "${id}"`,
+          action: `${status === 'closed' ? 'resolved' : 'reopened'} ticket "${ticket.subject}"`,
           user: 'Administrator',
           time: 'Just now',
         },
+      });
+
+      // Broadcast real-time update to all SSE clients
+      broadcastSSE('ticket_updated', {
+        ticketId: id,
+        type: 'status',
+        ticket,
       });
 
       return NextResponse.json(ticket);
@@ -32,11 +40,13 @@ export async function PATCH(
 
     // Handle reply message
     if (replyText && replyFrom) {
-      const newMessage = await prisma.message.create({
+      await prisma.message.create({
         data: {
           sender: replyFrom,
           text: replyText,
-          date: new Date().toLocaleString(),
+          date: new Date().toLocaleString('en-US', {
+            month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit',
+          }),
           ticketId: id,
         },
       });
@@ -44,6 +54,13 @@ export async function PATCH(
       const ticket = await prisma.ticket.findUnique({
         where: { id },
         include: { messages: { orderBy: { createdAt: 'asc' } } },
+      });
+
+      // Broadcast real-time update to all SSE clients
+      broadcastSSE('ticket_updated', {
+        ticketId: id,
+        type: 'reply',
+        ticket,
       });
 
       return NextResponse.json(ticket);
