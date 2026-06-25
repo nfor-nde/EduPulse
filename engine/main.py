@@ -76,23 +76,23 @@ def get_db_context() -> str:
     """Pull real-time stats from the database for chatbot context."""
     try:
         with db_engine.connect() as conn:
-            total_students  = conn.execute(text('SELECT COUNT(*) FROM Student')).scalar()
-            overdue_tuition = conn.execute(text("SELECT COUNT(*) FROM Student WHERE tuitionStatus='Overdue'")).scalar()
-            pending_medical = conn.execute(text("SELECT COUNT(*) FROM Student WHERE medicalStatus='Pending'")).scalar()
-            total_resources = conn.execute(text('SELECT COUNT(*) FROM Resource')).scalar()
-            open_tickets    = conn.execute(text("SELECT COUNT(*) FROM Ticket WHERE status='open'")).scalar()
-            total_campaigns = conn.execute(text('SELECT COUNT(*) FROM Campaign')).scalar()
+            total_students  = conn.execute(text('SELECT COUNT(*) FROM student')).scalar()
+            overdue_tuition = conn.execute(text("SELECT COUNT(*) FROM student WHERE tuitionStatus='Overdue'")).scalar()
+            pending_medical = conn.execute(text("SELECT COUNT(*) FROM student WHERE medicalStatus='Pending'")).scalar()
+            total_resources = conn.execute(text('SELECT COUNT(*) FROM resource')).scalar()
+            open_tickets    = conn.execute(text("SELECT COUNT(*) FROM ticket WHERE status='open'")).scalar()
+            total_campaigns = conn.execute(text('SELECT COUNT(*) FROM campaign')).scalar()
 
             recent_campaigns = conn.execute(text(
-                "SELECT title, audience, sentDate FROM Campaign ORDER BY createdAt DESC LIMIT 5"
+                "SELECT title, audience, sentDate FROM campaign ORDER BY createdAt DESC LIMIT 5"
             )).fetchall()
 
             faculties = conn.execute(text(
-                'SELECT DISTINCT faculty FROM Student ORDER BY faculty'
+                'SELECT DISTINCT faculty FROM student ORDER BY faculty'
             )).fetchall()
 
             recent_tickets = conn.execute(text(
-                "SELECT subject, studentMatricule, status, date FROM Ticket ORDER BY createdAt DESC LIMIT 5"
+                "SELECT subject, studentMatricule, status, date FROM ticket ORDER BY createdAt DESC LIMIT 5"
             )).fetchall()
 
         return f"""
@@ -236,7 +236,7 @@ def recommend_endpoint(req: RecommendRequest):
 
             where = ' AND '.join(conditions)
             rows = conn.execute(text(
-                f'SELECT id, title, description, type, url, faculty, dept, level FROM Resource WHERE {where} LIMIT 200'
+                f'SELECT id, title, description, type, url, faculty, dept, level FROM resource WHERE {where} LIMIT 200'
             ), params).fetchall()
 
         if not rows:
