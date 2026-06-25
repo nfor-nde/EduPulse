@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ArrowRightIcon,
@@ -14,14 +14,37 @@ import {
 } from '@/components/icons';
 import { useApp } from '@/context/AppContext';
 
+interface DBStats {
+  pastPapers: number;
+  videoTutorials: number;
+  activeStudents: number;
+  faculties: number;
+}
+
 export default function StudentHomePage() {
   const { loggedInStudent } = useApp();
+  const [dbStats, setDbStats] = useState<DBStats | null>(null);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/stats');
+        if (res.ok) {
+          const data = (await res.json()) as DBStats;
+          setDbStats(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch home stats', err);
+      }
+    }
+    fetchStats();
+  }, []);
 
   const stats = [
-    { label: 'Past Exam Papers', value: '1,200+', icon: BookOpenIcon, color: 'text-blue-800 bg-blue-50 border-blue-100' },
-    { label: 'Video Tutorials', value: '450+', icon: VideoIcon, color: 'text-amber-800 bg-amber-50 border-amber-100' },
-    { label: 'Active Students', value: '8,500+', icon: UsersIcon, color: 'text-green-800 bg-green-50 border-green-100' },
-    { label: 'Faculties Covered', value: '8+', icon: GraduationCapIcon, color: 'text-purple-800 bg-purple-50 border-purple-100' },
+    { label: 'Past Exam Papers', value: dbStats ? dbStats.pastPapers.toLocaleString() : '...', icon: BookOpenIcon, color: 'text-blue-800 bg-blue-50 border-blue-100' },
+    { label: 'Video Tutorials', value: dbStats ? dbStats.videoTutorials.toLocaleString() : '...', icon: VideoIcon, color: 'text-amber-800 bg-amber-50 border-amber-100' },
+    { label: 'Active Students', value: dbStats ? dbStats.activeStudents.toLocaleString() : '...', icon: UsersIcon, color: 'text-green-800 bg-green-50 border-green-100' },
+    { label: 'Faculties Covered', value: dbStats ? dbStats.faculties.toLocaleString() : '...', icon: GraduationCapIcon, color: 'text-purple-800 bg-purple-50 border-purple-100' },
   ];
 
   const benefits = [
@@ -107,7 +130,7 @@ export default function StudentHomePage() {
                 <stat.icon className="w-5 h-5" />
               </div>
               <p className="text-3xl font-black text-slate-900 tracking-tight">{stat.value}</p>
-              <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">{stat.label}</p>
+              <p className="text-xs font-bold text-slate-705 uppercase tracking-wide">{stat.label}</p>
             </div>
           ))}
         </div>

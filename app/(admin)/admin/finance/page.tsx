@@ -8,6 +8,11 @@ export default function AdminFinancePage() {
   const { students, markTuitionPaid, approveMedicalClearance } = useApp();
   const [activeTab, setActiveTab] = useState<'tuition' | 'medical'>('tuition');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Independent Pagination States
+  const [tuitionPage, setTuitionPage] = useState(1);
+  const [medicalPage, setMedicalPage] = useState(1);
+  const pageSize = 10;
 
   const overdueTuitionList = students.filter(
     (s) =>
@@ -23,12 +28,32 @@ export default function AdminFinancePage() {
         s.matricule.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+  // Tuition Pagination Math
+  const totalTuition = overdueTuitionList.length;
+  const totalTuitionPages = Math.max(1, Math.ceil(totalTuition / pageSize));
+  const activeTuitionPage = Math.min(tuitionPage, totalTuitionPages);
+  const startTuitionIndex = (activeTuitionPage - 1) * pageSize;
+  const paginatedTuitionList = overdueTuitionList.slice(startTuitionIndex, startTuitionIndex + pageSize);
+
+  // Medical Pagination Math
+  const totalMedical = pendingMedicalList.length;
+  const totalMedicalPages = Math.max(1, Math.ceil(totalMedical / pageSize));
+  const activeMedicalPage = Math.min(medicalPage, totalMedicalPages);
+  const startMedicalIndex = (activeMedicalPage - 1) * pageSize;
+  const paginatedMedicalList = pendingMedicalList.slice(startMedicalIndex, startMedicalIndex + pageSize);
+
   const handleMarkPaid = async (id: string) => {
     await markTuitionPaid(id);
   };
 
   const handleApproveMedical = async (id: string) => {
     await approveMedicalClearance(id);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setTuitionPage(1);
+    setMedicalPage(1);
   };
 
   return (
@@ -47,6 +72,7 @@ export default function AdminFinancePage() {
           onClick={() => {
             setActiveTab('tuition');
             setSearchQuery('');
+            setTuitionPage(1);
           }}
           className={`flex items-center space-x-2.5 pb-4 px-6 text-xs font-bold border-b-2 transition cursor-pointer ${
             activeTab === 'tuition'
@@ -65,6 +91,7 @@ export default function AdminFinancePage() {
           onClick={() => {
             setActiveTab('medical');
             setSearchQuery('');
+            setMedicalPage(1);
           }}
           className={`flex items-center space-x-2.5 pb-4 px-6 text-xs font-bold border-b-2 transition cursor-pointer ${
             activeTab === 'medical'
@@ -87,7 +114,7 @@ export default function AdminFinancePage() {
           type="text"
           placeholder="Filter students by name or ID..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={handleSearchChange}
           className="w-full pl-10 pr-4 py-2 border border-slate-200 bg-white text-slate-900 rounded-xl text-xs focus:outline-none focus:border-blue-800"
         />
       </div>
@@ -109,8 +136,8 @@ export default function AdminFinancePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs text-slate-900">
-                {overdueTuitionList.length > 0 ? (
-                  overdueTuitionList.map((student) => (
+                {paginatedTuitionList.length > 0 ? (
+                  paginatedTuitionList.map((student) => (
                     <tr key={student.id} className="hover:bg-slate-50/40 transition">
                       <td className="p-4 pl-6">
                         <div className="font-extrabold text-slate-900">{student.name}</div>
@@ -146,6 +173,34 @@ export default function AdminFinancePage() {
               </tbody>
             </table>
           </div>
+          
+          {/* Tuition Pagination Controls */}
+          {totalTuitionPages > 1 && (
+            <div className="bg-white border-t border-slate-200 px-6 py-4 flex items-center justify-between text-xs">
+              <span className="font-bold text-slate-705">
+                Showing {startTuitionIndex + 1} to {Math.min(startTuitionIndex + pageSize, totalTuition)} of {totalTuition} accounts
+              </span>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setTuitionPage((p) => Math.max(1, p - 1))}
+                  disabled={activeTuitionPage === 1}
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg font-bold text-slate-700 disabled:opacity-50 hover:bg-slate-50 transition"
+                >
+                  Previous
+                </button>
+                <span className="font-bold text-slate-900">
+                  Page {activeTuitionPage} of {totalTuitionPages}
+                </span>
+                <button
+                  onClick={() => setTuitionPage((p) => Math.min(totalTuitionPages, p + 1))}
+                  disabled={activeTuitionPage === totalTuitionPages}
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg font-bold text-slate-700 disabled:opacity-50 hover:bg-slate-50 transition"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -165,8 +220,8 @@ export default function AdminFinancePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs text-slate-900">
-                {pendingMedicalList.length > 0 ? (
-                  pendingMedicalList.map((student) => (
+                {paginatedMedicalList.length > 0 ? (
+                  paginatedMedicalList.map((student) => (
                     <tr key={student.id} className="hover:bg-slate-50/40 transition">
                       <td className="p-4 pl-6">
                         <div className="font-extrabold text-slate-900">{student.name}</div>
@@ -202,6 +257,34 @@ export default function AdminFinancePage() {
               </tbody>
             </table>
           </div>
+          
+          {/* Medical Pagination Controls */}
+          {totalMedicalPages > 1 && (
+            <div className="bg-white border-t border-slate-200 px-6 py-4 flex items-center justify-between text-xs">
+              <span className="font-bold text-slate-705">
+                Showing {startMedicalIndex + 1} to {Math.min(startMedicalIndex + pageSize, totalMedical)} of {totalMedical} clearances
+              </span>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setMedicalPage((p) => Math.max(1, p - 1))}
+                  disabled={activeMedicalPage === 1}
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg font-bold text-slate-700 disabled:opacity-50 hover:bg-slate-50 transition"
+                >
+                  Previous
+                </button>
+                <span className="font-bold text-slate-900">
+                  Page {activeMedicalPage} of {totalMedicalPages}
+                </span>
+                <button
+                  onClick={() => setMedicalPage((p) => Math.min(totalMedicalPages, p + 1))}
+                  disabled={activeMedicalPage === totalMedicalPages}
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg font-bold text-slate-700 disabled:opacity-50 hover:bg-slate-50 transition"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

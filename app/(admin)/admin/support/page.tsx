@@ -13,9 +13,13 @@ import {
 import { Ticket } from '@/types';
 
 export default function AdminSupportPage() {
-  const { tickets, replyToTicket, updateTicketStatus, students } = useApp();
+  const { tickets, replyToTicket, updateTicketStatus, students, refreshTickets } = useApp();
   const [activeTicket, setActiveTicket] = useState<Ticket | null>(null);
   const [replyText, setReplyText] = useState('');
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
 
   const activeStudentInfo = activeTicket
     ? students.find((s) => s.matricule === activeTicket.studentMatricule)
@@ -28,6 +32,52 @@ export default function AdminSupportPage() {
       if (updated) setActiveTicket(updated);
     }
   }, [tickets, activeTicket?.id]);
+
+  // SSE subscription to receive real-time updates of tickets on admin side
+  useEffect(() => {
+    const es = new EventSource('/api/tickets/stream');
+
+    es.addEventListener('ticket_updated', (e: MessageEvent) => {
+      try {
+        const payload = JSON.parse(e.data) as {
+          ticketId: string;
+          type: 'reply' | 'status';
+          ticket: Ticket;
+        };
+
+        // Sync local activeTicket state immediately (no API call needed)
+        setActiveTicket((current) => {
+          if (current && current.id === payload.ticketId) {
+            return payload.ticket;
+          }
+          return current;
+        });
+
+        // Refresh all tickets list in context
+        refreshTickets();
+      } catch {
+        // Ignore malformed payloads
+      }
+    });
+
+    es.onerror = () => {
+      // On error, reconnect after 3s
+      es.close();
+    };
+
+    // Polling fallback: refresh every 10s in case SSE misses an event
+    const pollInterval = setInterval(() => refreshTickets(), 10000);
+
+    return () => {
+      es.close();
+      clearInterval(pollInterval);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keep refreshTickets up-to-date in a ref to avoid stale closure
+  const refreshTicketsRef = React.useRef(refreshTickets);
+  useEffect(() => { refreshTicketsRef.current = refreshTickets; }, [refreshTickets]);
 
   const handleSendAdminReply = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,12 +94,19 @@ export default function AdminSupportPage() {
     await updateTicketStatus(ticketId, 'open');
   };
 
+  // Pagination Math
+  const totalTickets = tickets.length;
+  const totalPages = Math.max(1, Math.ceil(totalTickets / pageSize));
+  const activePage = Math.min(currentPage, totalPages);
+  const startIndex = (activePage - 1) * pageSize;
+  const paginatedTickets = tickets.slice(startIndex, startIndex + pageSize);
+
   return (
     <div className="space-y-8 font-sans bg-white text-slate-905">
       {/* Title */}
       <div className="space-y-2">
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Registrar Support Desk</h1>
-        <p className="text-xs font-bold text-slate-700 max-w-2xl">
+        <p className="text-xs font-bold text-slate-705 max-w-2xl">
           Review, assign and reply to claims submitted by students regarding academic registry or finance.
         </p>
       </div>
@@ -63,52 +120,77 @@ export default function AdminSupportPage() {
             <span>Ticket Queue ({tickets.length})</span>
           </h2>
 
-          <div className="bg-white border border-slate-250 rounded-2xl shadow-sm overflow-hidden divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
-            {tickets.length > 0 ? (
-              tickets.map((ticket) => {
-                const student = students.find((s) => s.matricule === ticket.studentMatricule);
-                const isSelected = activeTicket?.id === ticket.id;
-                return (
-                  <button
-                    key={ticket.id}
-                    onClick={() => setActiveTicket(ticket)}
-                    className={`w-full p-4 text-left hover:bg-blue-50/20 transition flex flex-col space-y-2.5 cursor-pointer ${
-                      isSelected ? 'bg-blue-50/40 border-l-4 border-blue-805' : ''
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-[10px] font-mono text-slate-700 font-bold uppercase">
-                        {ticket.id}
-                      </span>
-                      {ticket.status === 'open' ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                          Open
+          <div className="bg-white border border-slate-250 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+            <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
+              {paginatedTickets.length > 0 ? (
+                paginatedTickets.map((ticket) => {
+                  const student = students.find((s) => s.matricule === ticket.studentMatricule);
+                  const isSelected = activeTicket?.id === ticket.id;
+                  return (
+                    <button
+                      key={ticket.id}
+                      onClick={() => setActiveTicket(ticket)}
+                      className={`w-full p-4 text-left hover:bg-blue-50/20 transition flex flex-col space-y-2.5 cursor-pointer ${
+                        isSelected ? 'bg-blue-50/40 border-l-4 border-blue-805' : ''
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-[10px] font-mono text-slate-700 font-bold uppercase">
+                          {ticket.id}
                         </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-green-50 text-green-800 border border-green-200">
-                          Closed
-                        </span>
-                      )}
-                    </div>
+                        {ticket.status === 'open' ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                            Open
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-green-50 text-green-800 border border-green-200">
+                            Closed
+                          </span>
+                        )}
+                      </div>
 
-                    <div className="space-y-1">
-                      <p className="text-xs font-black text-slate-900 truncate w-full">
-                        {ticket.subject}
-                      </p>
-                      <p className="text-[10px] text-slate-700 font-bold">
-                        {student ? student.name : ticket.studentMatricule}
-                      </p>
-                    </div>
+                      <div className="space-y-1">
+                        <p className="text-xs font-black text-slate-900 truncate w-full">
+                          {ticket.subject}
+                        </p>
+                        <p className="text-[10px] text-slate-705 font-bold">
+                          {student ? student.name : ticket.studentMatricule}
+                        </p>
+                      </div>
 
-                    <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold pt-1">
-                      <span>Submitted: {ticket.date}</span>
-                      <span>{ticket.messages.length} replies</span>
-                    </div>
-                  </button>
-                );
-              })
-            ) : (
-              <div className="p-8 text-center text-xs text-slate-500">No support tickets found.</div>
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold pt-1">
+                        <span>Submitted: {ticket.date}</span>
+                        <span>{ticket.messages.length} replies</span>
+                      </div>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="p-8 text-center text-xs text-slate-500">No support tickets found.</div>
+              )}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="bg-white border-t border-slate-200 px-4 py-3 flex items-center justify-between text-xs">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={activePage === 1}
+                  className="px-2 py-1 border border-slate-200 rounded-lg font-bold text-slate-700 disabled:opacity-50 hover:bg-slate-50 transition"
+                >
+                  Prev
+                </button>
+                <span className="font-bold text-slate-900">
+                  {activePage} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={activePage === totalPages}
+                  className="px-2 py-1 border border-slate-200 rounded-lg font-bold text-slate-700 disabled:opacity-50 hover:bg-slate-50 transition"
+                >
+                  Next
+                </button>
+              </div>
             )}
           </div>
         </div>

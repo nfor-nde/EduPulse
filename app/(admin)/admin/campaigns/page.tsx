@@ -11,6 +11,10 @@ export default function AdminCampaignsPage() {
   const [audience, setAudience] = useState('All Students');
   const [message, setMessage] = useState('');
   const [toastMessage, setToastMessage] = useState('');
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
 
   const handleSendCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,18 +26,26 @@ export default function AdminCampaignsPage() {
     setTitle('');
     setMessage('');
     setAudience('All Students');
+    setCurrentPage(1); // Reset to first page to see the new campaign
 
     setTimeout(() => {
       setToastMessage('');
     }, 4000);
   };
 
+  // Pagination Math
+  const totalCampaigns = campaigns.length;
+  const totalPages = Math.max(1, Math.ceil(totalCampaigns / pageSize));
+  const activePage = Math.min(currentPage, totalPages);
+  const startIndex = (activePage - 1) * pageSize;
+  const paginatedCampaigns = campaigns.slice(startIndex, startIndex + pageSize);
+
   return (
     <div className="space-y-8 font-sans bg-white text-slate-905">
       {/* Title */}
       <div className="space-y-2">
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Broadcast Campaigns</h1>
-        <p className="text-xs font-bold text-slate-700 max-w-2xl">
+        <p className="text-xs font-bold text-slate-705 max-w-2xl">
           Draft and broadcast notification bulletins and announcements targeting specific student cohorts.
         </p>
       </div>
@@ -130,7 +142,7 @@ export default function AdminCampaignsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs text-slate-900">
-                  {campaigns.map((camp) => (
+                  {paginatedCampaigns.map((camp) => (
                     <tr key={camp.id} className="hover:bg-slate-50/20 transition">
                       <td className="p-4 pl-6 font-bold text-slate-900">
                         <p className="font-extrabold text-slate-900 truncate max-w-[150px]">{camp.title}</p>
@@ -162,6 +174,34 @@ export default function AdminCampaignsPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Campaign Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="bg-white border-t border-slate-200 px-6 py-4 flex items-center justify-between text-xs">
+                <span className="font-bold text-slate-705">
+                  Showing {startIndex + 1} to {Math.min(startIndex + pageSize, totalCampaigns)} of {totalCampaigns} campaigns
+                </span>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={activePage === 1}
+                    className="px-3 py-1.5 border border-slate-200 rounded-lg font-bold text-slate-700 disabled:opacity-50 hover:bg-slate-50 transition"
+                  >
+                    Previous
+                  </button>
+                  <span className="font-bold text-slate-900">
+                    Page {activePage} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={activePage === totalPages}
+                    className="px-3 py-1.5 border border-slate-200 rounded-lg font-bold text-slate-700 disabled:opacity-50 hover:bg-slate-50 transition"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

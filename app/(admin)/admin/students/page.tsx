@@ -7,12 +7,37 @@ import { SearchIcon, CheckCircleIcon, AlertCircleIcon } from '@/components/icons
 export default function AdminStudentsPage() {
   const { students } = useApp();
   const [searchVal, setSearchVal] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   const filteredStudents = students.filter(
     (student) =>
       student.name.toLowerCase().includes(searchVal.toLowerCase()) ||
       student.matricule.toLowerCase().includes(searchVal.toLowerCase())
   );
+
+  // Pagination Math
+  const totalStudents = filteredStudents.length;
+  const totalPages = Math.max(1, Math.ceil(totalStudents / pageSize));
+  
+  // Adjust current page if it exceeds total pages after filtering
+  const activePage = Math.min(currentPage, totalPages);
+  
+  const startIndex = (activePage - 1) * pageSize;
+  const paginatedStudents = filteredStudents.slice(startIndex, startIndex + pageSize);
+
+  const handlePrevPage = () => {
+    setCurrentPage((prev) => Math.max(1, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchVal(e.target.value);
+    setCurrentPage(1); // Reset to page 1 on new search
+  };
 
   return (
     <div className="space-y-8 font-sans bg-white text-slate-905">
@@ -32,7 +57,7 @@ export default function AdminStudentsPage() {
             type="text"
             placeholder="Search students by full name or matricule..."
             value={searchVal}
-            onChange={(e) => setSearchVal(e.target.value)}
+            onChange={handleSearchChange}
             className="w-full pl-10 pr-4 py-2.5 text-xs border border-slate-200 bg-white text-slate-900 rounded-xl focus:outline-none focus:border-blue-800"
           />
         </div>
@@ -56,8 +81,8 @@ export default function AdminStudentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs text-slate-900">
-              {filteredStudents.length > 0 ? (
-                filteredStudents.map((student) => (
+              {paginatedStudents.length > 0 ? (
+                paginatedStudents.map((student) => (
                   <tr key={student.id} className="hover:bg-slate-50/40 transition">
                     {/* Student Info */}
                     <td className="p-4 pl-6">
@@ -134,7 +159,36 @@ export default function AdminStudentsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <div className="bg-white border-t border-slate-200 px-6 py-4 flex items-center justify-between text-xs">
+            <span className="font-bold text-slate-705">
+              Showing {startIndex + 1} to {Math.min(startIndex + pageSize, totalStudents)} of {totalStudents} students
+            </span>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handlePrevPage}
+                disabled={activePage === 1}
+                className="px-3 py-1.5 border border-slate-200 rounded-lg font-bold text-slate-700 disabled:opacity-50 hover:bg-slate-50 transition"
+              >
+                Previous
+              </button>
+              <span className="font-bold text-slate-900">
+                Page {activePage} of {totalPages}
+              </span>
+              <button
+                onClick={handleNextPage}
+                disabled={activePage === totalPages}
+                className="px-3 py-1.5 border border-slate-200 rounded-lg font-bold text-slate-700 disabled:opacity-50 hover:bg-slate-50 transition"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
