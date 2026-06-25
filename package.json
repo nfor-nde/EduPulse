@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "engine": "cd engine && python -m uvicorn main:app --reload --port 8000"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

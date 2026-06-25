@@ -215,7 +215,7 @@ export default function AdminSupportPage() {
                   {activeTicket.status === 'open' ? (
                     <button
                       onClick={() => handleResolveTicket(activeTicket.id)}
-                      className="bg-green-650 hover:bg-green-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-sm hover:scale-102 active:scale-98 cursor-pointer"
+                      className="bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-sm hover:scale-102 active:scale-98 cursor-pointer"
                     >
                       Mark as Resolved
                     </button>
