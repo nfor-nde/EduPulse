@@ -6,15 +6,15 @@ EduPulse is a full-stack EdTech platform built for higher education institutions
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js 16 (App Router), React 19, Tailwind CSS v4 |
-| Backend | Next.js API Routes (Node.js) |
-| Database | MySQL via Prisma ORM |
-| Auth | JWT (jose) stored in HTTP-only cookies |
-| Real-time | Server-Sent Events (SSE) |
+| Layer     | Technology                                              |
+| --------- | ------------------------------------------------------- |
+| Frontend  | Next.js 16 (App Router), React 19, Tailwind CSS v4      |
+| Backend   | Next.js API Routes (Node.js)                            |
+| Database  | MySQL via Prisma ORM                                    |
+| Auth      | JWT (jose) stored in HTTP-only cookies                  |
+| Real-time | Server-Sent Events (SSE)                                |
 | AI Engine | Python — FastAPI, OpenRouter LLM, XGBoost, scikit-learn |
-| Email | Nodemailer (SMTP) |
+| Email     | Nodemailer (SMTP)                                       |
 
 ---
 
@@ -75,12 +75,14 @@ EduPulse/
 ## Features
 
 ### Student Portal
+
 - **Homepage** — Live statistics pulled directly from the database (past papers count, video tutorials, active students, faculties covered)
 - **Resource Library** — Browse 20,000+ academic resources (lecture notes, past papers, video lectures) with full-text search and filters by faculty, department, level, and type; paginated with 24 items per page
 - **Support Tickets** — Submit, track, and reply to support tickets; real-time updates via SSE so new admin replies appear instantly without refresh
 - **AI Chatbot** — Floating chat widget powered by an LLM (OpenRouter) with real-time database access and web search; responses rendered as rich markdown
 
 ### Admin CRM
+
 - **Overview Dashboard** — KPI cards (total students, overdue tuition, pending medical, open tickets), clearance progress bars, scrollable activity feed
 - **Student Directory** — Paginated table of all students with search, tuition status, and medical status indicators
 - **Finance & Clearance** — Tabbed view for overdue tuition and pending medical clearances; mark paid / approve clearance actions; paginated
@@ -88,6 +90,7 @@ EduPulse/
 - **Support Desk** — Real-time ticket queue with SSE subscription and 10-second polling fallback; split-panel chat console with student dossier sidebar; paginated ticket list
 
 ### AI Engine (Python)
+
 - **Recommendation Engine** — Hybrid XGBoost + SVD collaborative filtering model trained on student interaction data; predicts resource relevance per student profile; artifacts saved to `engine/artifacts/`
 - **AI Chatbot Backend** — FastAPI streaming endpoint that injects live DB context into every LLM prompt, performs DuckDuckGo web searches for current information, and streams tokens via SSE to the frontend
 - **Notebooks** — `recommendation.ipynb` and `chatbot.ipynb` document the full ML pipeline with EDA visualisations, confusion matrices, learning curves, feature importance plots, and architecture diagrams
@@ -97,6 +100,7 @@ EduPulse/
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
 - MySQL running locally
 - Python 3.11+
@@ -151,7 +155,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ```bash
 cd engine
-.venv\Scripts\activate        # Windows
+.venv\Scripts\activate.ps1        # Windows
 # source .venv/bin/activate   # macOS/Linux
 
 # First run — train the recommendation model
@@ -167,10 +171,10 @@ The engine will be available at [http://localhost:8000](http://localhost:8000). 
 
 ## Demo Credentials
 
-| Role | ID | Password |
-|---|---|---|
-| Student | `EP2026-1234` | `password` |
-| Admin CRM | — | Navigate directly to `/admin/overview` |
+| Role      | ID            | Password                               |
+| --------- | ------------- | -------------------------------------- |
+| Student   | `EP2026-1234` | `password`                             |
+| Admin CRM | —             | Navigate directly to `/admin/overview` |
 
 ---
 
